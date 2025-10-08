@@ -8,7 +8,7 @@ const OPENFOOTBALL_URLS = {
 };
 
 const LEAGUE_FLAGS = {
-    'Premier League': '🏴',
+    'Premier League': 'ENG',
     'La Liga': '🇪🇸',
     'Serie A': '🇮🇹',
     'Bundesliga': '🇩🇪',
@@ -468,7 +468,8 @@ class FootballGuesser {
             .replace(/^AS /, '')
             .replace(/^SC /, '')
             .replace(/^US /, '')
-            .replace(/^RC /, '');
+            .replace(/^RC /, '')
+            .replace(/^SC /, '');
         if (withoutPrefix !== teamName) {
             terms.push(withoutPrefix);
         }

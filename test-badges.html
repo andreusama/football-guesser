@@ -213,15 +213,112 @@
             return shuffled.slice(0, count);
         }
 
-        // Team name mapping (from game.js)
+        // Team name mapping (from game.js) - Complete list
         const TEAM_NAME_MAPPING = {
+            // Premier League (after FC removal)
             'Manchester United': 'Man Utd',
             'Manchester City': 'Man City',
+            'Newcastle United': 'Newcastle',
+            'Tottenham Hotspur': 'Tottenham',
+            'West Ham United': 'West Ham',
+            'Nottingham Forest': "Nott'm Forest",
+            'Brighton & Hove Albion': 'Brighton',
+            'Wolverhampton Wanderers': 'Wolves',
+            'AFC Bournemouth': 'Bournemouth',
+            'Aston Villa': 'Aston Villa',
+            'Brentford': 'Brentford',
+            'Crystal Palace': 'Crystal Palace',
+            'Chelsea': 'Chelsea',
+            'Arsenal': 'Arsenal',
+            'Liverpool': 'Liverpool',
+            'Fulham': 'Fulham',
+            'Everton': 'Everton',
+            'Leicester City': 'Leicester',
+            'Ipswich Town': 'Ipswich',
+            'Southampton': 'Southampton',
+
+            // Ligue 1 (after FC removal)
             'Paris Saint-Germain': 'Paris SG',
-            'Inter Milan': 'Inter Milan',
+            'Olympique de Marseille': 'Marseille',
+            'Olympique Lyonnais': 'Lyon',
+            'AS Monaco': 'Monaco',
+            'OGC Nice': 'Nice',
+            'Racing Club de Lens': 'Lens',
+            'Stade Rennais 1901': 'Rennes',
+            'Lille OSC': 'Lille',
+            'Stade de Reims': 'Reims',
+            'Montpellier HSC': 'Montpellier',
+            'Toulouse': 'Toulouse',
+            'Nantes': 'Nantes',
+            'Stade Brestois 29': 'Brest',
+            'Le Havre AC': 'Le Havre',
+            'AS Saint-Étienne': 'Saint-Etienne',
+            'RC Strasbourg Alsace': 'Strasbourg',
+            'AJ Auxerre': 'Auxerre',
+            'Angers SCO': 'Angers',
+
+            // La Liga
+            'Atlético Madrid': 'Atletico Madrid',
+            'Athletic Club': 'Athletic Bilbao',
+            'Real Betis': 'Real Betis',
+            'Celta de Vigo': 'Celta Vigo',
+            'Deportivo Alavés': 'Alaves',
+            'RCD Espanyol': 'Espanyol',
+            'Rayo Vallecano': 'Rayo Vallecano',
+            'Real Sociedad': 'Real Sociedad',
+            'Villarreal': 'Villarreal',
+            'Getafe': 'Getafe',
+            'Osasuna': 'Osasuna',
+            'Girona': 'Girona',
+            'Mallorca': 'Mallorca',
+            'Las Palmas': 'Las Palmas',
+            'Valladolid': 'Valladolid',
+            'Leganés': 'Leganes',
+
+            // Serie A
             'AC Milan': 'AC Milan',
+            'Inter': 'Inter Milan',
+            'Internazionale': 'Inter Milan',
+            'Juventus': 'Juventus',
+            'AS Roma': 'Roma',
+            'SSC Napoli': 'Napoli',
+            'Lazio': 'Lazio',
+            'Atalanta': 'Atalanta',
+            'Fiorentina': 'Fiorentina',
+            'Torino': 'Torino',
+            'Bologna': 'Bologna',
+            'Udinese': 'Udinese',
+            'Empoli': 'Empoli',
+            'Cagliari': 'Cagliari',
+            'Parma': 'Parma',
+            'Como': 'Como',
             'Hellas Verona': 'Hellas Verona',
-            'Brighton & Hove Albion': 'Brighton'
+            'Lecce': 'Lecce',
+            'Genoa': 'Genoa',
+            'Venezia': 'Venezia',
+            'Monza': 'Monza',
+
+            // Bundesliga
+            'Borussia Dortmund': 'Borussia Dortmund',
+            'Borussia M\'gladbach': 'Monchengladbach',
+            'Bayern Munich': 'Bayern Munich',
+            'Bayern München': 'Bayern Munich',
+            'FC Köln': 'FC Cologne',
+            '1. FSV Mainz 05': 'Mainz',
+            'Eintracht Frankfurt': 'Eintracht Frankfurt',
+            'VfL Wolfsburg': 'Wolfsburg',
+            'RB Leipzig': 'RB Leipzig',
+            'Bayer Leverkusen': 'Bayer Leverkusen',
+            'SC Freiburg': 'Freiburg',
+            'Union Berlin': 'Union Berlin',
+            'VfB Stuttgart': 'Stuttgart',
+            'Werder Bremen': 'Werder Bremen',
+            'TSG Hoffenheim': 'Hoffenheim',
+            'FC Augsburg': 'Augsburg',
+            'VfL Bochum': 'Bochum',
+            'FC St. Pauli': 'St Pauli',
+            'Holstein Kiel': 'Holstein Kiel',
+            'FC Heidenheim': 'Heidenheim'
         };
 
         const teamBadgeCache = {};
@@ -290,44 +387,100 @@
             return null;
         }
 
+        function generateSearchTerms(teamName) {
+            const terms = [];
+
+            // 1. Try mapped name first
+            const mappedName = TEAM_NAME_MAPPING[teamName];
+            if (mappedName) {
+                terms.push(mappedName);
+            }
+
+            // 2. Try original cleaned name
+            terms.push(teamName);
+
+            // 3. Try first word only (e.g., "Hellas Verona" -> "Hellas")
+            const firstWord = teamName.split(' ')[0];
+            if (firstWord !== teamName && firstWord.length > 3) {
+                terms.push(firstWord);
+            }
+
+            // 4. Try last word only (e.g., "Hellas Verona" -> "Verona")
+            const words = teamName.split(' ');
+            const lastWord = words[words.length - 1];
+            if (lastWord !== teamName && lastWord.length > 3) {
+                terms.push(lastWord);
+            }
+
+            // 5. Try without common prefixes
+            const withoutPrefix = teamName
+                .replace(/^FC /, '')
+                .replace(/^CF /, '')
+                .replace(/^AC /, '')
+                .replace(/^AS /, '')
+                .replace(/^SC /, '')
+                .replace(/^US /, '')
+                .replace(/^RC /, '');
+            if (withoutPrefix !== teamName) {
+                terms.push(withoutPrefix);
+            }
+
+            // Remove duplicates
+            return [...new Set(terms)];
+        }
+
         async function fetchFromSportsDB(teamName) {
             log(`[SEARCHING] TheSportsDB...`);
-            const mappedName = TEAM_NAME_MAPPING[teamName] || teamName;
 
-            try {
-                log(`  → Searching for "${mappedName}"`);
-                const response = await fetch(`${THESPORTSDB_API}/searchteams.php?t=${encodeURIComponent(mappedName)}`);
+            // Generate multiple search term variations
+            const searchTerms = generateSearchTerms(teamName);
+            log(`  → Will try ${searchTerms.length} search variations: ${searchTerms.join(', ')}`);
 
-                if (response.status === 429) {
-                    log(`  [ERROR] Rate limit hit!`);
-                    return null;
-                }
+            // Try each search term sequentially until one works
+            for (let i = 0; i < searchTerms.length; i++) {
+                const searchTerm = searchTerms[i];
 
-                if (!response.ok) {
-                    log(`  [ERROR] API returned status ${response.status}`);
-                    return null;
-                }
+                try {
+                    log(`  → Attempt ${i + 1}/${searchTerms.length}: Searching for "${searchTerm}"`);
 
-                const data = await response.json();
+                    const response = await fetch(`${THESPORTSDB_API}/searchteams.php?t=${encodeURIComponent(searchTerm)}`);
 
-                if (data.teams && data.teams.length > 0) {
-                    const footballTeam = data.teams.find(team => team.strSport === 'Soccer');
-                    if (footballTeam) {
-                        const badge = footballTeam.strBadge;
-                        teamBadgeCache[teamName] = { url: badge, source: 'sportsdb', name: footballTeam.strTeam };
-                        log(`  [SUCCESS] Found soccer team: ${footballTeam.strTeam}`);
-                        log(`[SUCCESS] Badge found via TheSportsDB for "${teamName}"\n`);
-                        return { url: badge, source: 'sportsdb', name: footballTeam.strTeam };
+                    if (response.status === 429) {
+                        log(`  [ERROR] Rate limit hit! Waiting 1 second...`);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        continue;
                     }
+
+                    if (!response.ok) {
+                        log(`  [ERROR] API returned status ${response.status}`);
+                        continue;
+                    }
+
+                    const data = await response.json();
+
+                    if (data.teams && data.teams.length > 0) {
+                        const footballTeam = data.teams.find(team => team.strSport === 'Soccer');
+
+                        if (footballTeam) {
+                            const badge = footballTeam.strBadge;
+                            teamBadgeCache[teamName] = { url: badge, source: 'sportsdb', name: footballTeam.strTeam };
+                            log(`  [SUCCESS] Found soccer team: ${footballTeam.strTeam}`);
+                            log(`[SUCCESS] Badge found via TheSportsDB for "${teamName}"\n`);
+                            return { url: badge, source: 'sportsdb', name: footballTeam.strTeam };
+                        }
+                    }
+
+                    log(`  → No results for "${searchTerm}"`);
+
+                } catch (error) {
+                    log(`  [ERROR] ${error.message}`);
+                    continue;
                 }
-
-                log(`[FAILED] TheSportsDB did not have badge for "${teamName}"`);
-                return null;
-
-            } catch (error) {
-                log(`  [ERROR] ${error.message}`);
-                return null;
             }
+
+            // All search attempts failed
+            log(`[FAILED] TheSportsDB did not have badge for "${teamName}"`);
+            return null;
         }
 
         function exportMissingTeams() {
