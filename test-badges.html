@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Source Badge Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-secondary {
+            background: #28a745;
+            color: white;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .team-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .team-row:last-child {
+            border-bottom: none;
+        }
+        .badge-container {
+            min-width: 60px;
+            text-align: center;
+        }
+        .badge {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+        .team-info {
+            flex: 1;
+        }
+        .team-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .team-detail {
+            font-size: 0.9em;
+            color: #666;
+            margin: 2px 0;
+        }
+        .source-badge {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .source-sportsdb {
+            background: #d4edda;
+            color: #155724;
+        }
+        .source-wikipedia {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .source-placeholder {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .source-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .log-area {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 10px;
+        }
+        .log-cache { color: #4ec9b0; }
+        .log-success { color: #6a9955; }
+        .log-failed { color: #ce9178; }
+        .log-error { color: #f48771; }
+        .log-tier { color: #569cd6; }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .summary-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .summary-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .summary-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>TheSportsDB Badge Test</h1>
+    <p class="subtitle">Tests badge loading with TheSportsDB only (no fallbacks)<br>
+    Each run tests 20 random teams from a pool of 70+ teams across all 5 leagues</p>
+
+    <div class="controls">
+        <button class="btn-primary" onclick="runTests()">Run Badge Tests</button>
+        <button class="btn-secondary" onclick="exportMissingTeams()">Export Missing Teams</button>
+        <button class="btn-secondary" onclick="clearLogs()">Clear Logs</button>
+    </div>
+
+    <div class="summary" id="summary" style="display: none;">
+        <div class="summary-card">
+            <div class="summary-number" id="total-count">0</div>
+            <div class="summary-label">Teams Tested</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-number" id="sportsdb-count">0</div>
+            <div class="summary-label">Found</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-number" id="missing-count">0</div>
+            <div class="summary-label">Missing</div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Logs</h2>
+        <div class="log-area" id="log-output">Waiting to run tests...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        const THESPORTSDB_API = 'https://www.thesportsdb.com/api/v1/json/3';
+
+        // Comprehensive pool of test teams from all leagues
+        const ALL_TEST_TEAMS = [
+            // Premier League
+            'Manchester United', 'Liverpool', 'Arsenal', 'Chelsea', 'Manchester City',
+            'Tottenham Hotspur', 'Newcastle United', 'Brighton & Hove Albion', 'Aston Villa',
+            'West Ham United', 'Everton', 'Leicester City', 'Leeds United', 'Wolverhampton Wanderers',
+            'Crystal Palace', 'Southampton', 'Burnley', 'Fulham', 'Brentford', 'Nottingham Forest',
+
+            // La Liga
+            'Real Madrid', 'Barcelona', 'Atletico Madrid', 'Sevilla', 'Valencia',
+            'Real Sociedad', 'Real Betis', 'Villarreal', 'Athletic Bilbao', 'Celta Vigo',
+            'Espanyol', 'Getafe', 'Granada', 'Osasuna', 'Rayo Vallecano', 'Cadiz',
+
+            // Serie A
+            'Juventus', 'Inter Milan', 'AC Milan', 'Napoli', 'Roma', 'Lazio',
+            'Atalanta', 'Fiorentina', 'Hellas Verona', 'Torino', 'Sassuolo',
+            'Bologna', 'Udinese', 'Sampdoria', 'Empoli', 'Cagliari', 'Spezia',
+
+            // Bundesliga
+            'Bayern Munich', 'Borussia Dortmund', 'RB Leipzig', 'Bayer Leverkusen',
+            'Borussia Monchengladbach', 'Eintracht Frankfurt', 'Union Berlin', 'SC Freiburg',
+            'Wolfsburg', 'Mainz', 'Hoffenheim', 'Cologne', 'Hertha Berlin', 'Augsburg',
+
+            // Ligue 1
+            'Paris Saint-Germain', 'Marseille', 'Lyon', 'Monaco', 'Lille',
+            'Rennes', 'Nice', 'Lens', 'Nantes', 'Montpellier', 'Strasbourg',
+            'Angers SCO', 'Le Havre AC', 'Auxerre', 'Reims', 'Brest', 'Lorient', 'Toulouse'
+        ];
+
+        // Function to get random teams from the pool
+        function getRandomTestTeams(count = 20) {
+            const shuffled = [...ALL_TEST_TEAMS].sort(() => Math.random() - 0.5);
+            return shuffled.slice(0, count);
+        }
+
+        // Team name mapping (from game.js)
+        const TEAM_NAME_MAPPING = {
+            'Manchester United': 'Man Utd',
+            'Manchester City': 'Man City',
+            'Paris Saint-Germain': 'Paris SG',
+            'Inter Milan': 'Inter Milan',
+            'AC Milan': 'AC Milan',
+            'Hellas Verona': 'Hellas Verona',
+            'Brighton & Hove Albion': 'Brighton'
+        };
+
+        const teamBadgeCache = {};
+        const missingTeamBadges = [];
+        let stats = { total: 0, sportsdb: 0, missing: 0 };
+
+        function log(message, type = 'info') {
+            const logOutput = document.getElementById('log-output');
+            const timestamp = new Date().toLocaleTimeString();
+            let className = '';
+
+            if (message.includes('[CACHE]')) className = 'log-cache';
+            else if (message.includes('[SUCCESS]')) className = 'log-success';
+            else if (message.includes('[FAILED]')) className = 'log-failed';
+            else if (message.includes('[ERROR]')) className = 'log-error';
+            else if (message.includes('[TIER')) className = 'log-tier';
+
+            const line = `[${timestamp}] ${message}`;
+            const span = document.createElement('span');
+            span.className = className;
+            span.textContent = line + '\n';
+            logOutput.appendChild(span);
+            logOutput.scrollTop = logOutput.scrollHeight;
+
+            console.log(line);
+        }
+
+        function clearLogs() {
+            document.getElementById('log-output').textContent = 'Logs cleared. Ready for new tests...\n';
+        }
+
+        function updateSummary() {
+            document.getElementById('summary').style.display = 'grid';
+            document.getElementById('total-count').textContent = stats.total;
+            document.getElementById('sportsdb-count').textContent = stats.sportsdb;
+            document.getElementById('missing-count').textContent = stats.missing;
+        }
+
+        async function fetchTeamBadge(teamName) {
+            // Check cache
+            if (teamBadgeCache[teamName]) {
+                log(`[CACHE] Using cached badge for "${teamName}"`);
+                return teamBadgeCache[teamName];
+            }
+
+            log(`\n[START] Fetching badge for "${teamName}"...`);
+
+            // ONLY SOURCE: TheSportsDB
+            const sportsDBBadge = await fetchFromSportsDB(teamName);
+            if (sportsDBBadge) {
+                stats.sportsdb++;
+                return sportsDBBadge;
+            }
+
+            // BADGE NOT FOUND - Track as missing
+            log(`[FAILED] TheSportsDB did not have badge for "${teamName}"`);
+            stats.missing++;
+
+            if (!missingTeamBadges.includes(teamName)) {
+                missingTeamBadges.push(teamName);
+                log(`[TRACKED] Added "${teamName}" to missing teams list`);
+            }
+
+            teamBadgeCache[teamName] = null;
+            log(`[SKIP] Team will be skipped in game\n`);
+            return null;
+        }
+
+        async function fetchFromSportsDB(teamName) {
+            log(`[SEARCHING] TheSportsDB...`);
+            const mappedName = TEAM_NAME_MAPPING[teamName] || teamName;
+
+            try {
+                log(`  → Searching for "${mappedName}"`);
+                const response = await fetch(`${THESPORTSDB_API}/searchteams.php?t=${encodeURIComponent(mappedName)}`);
+
+                if (response.status === 429) {
+                    log(`  [ERROR] Rate limit hit!`);
+                    return null;
+                }
+
+                if (!response.ok) {
+                    log(`  [ERROR] API returned status ${response.status}`);
+                    return null;
+                }
+
+                const data = await response.json();
+
+                if (data.teams && data.teams.length > 0) {
+                    const footballTeam = data.teams.find(team => team.strSport === 'Soccer');
+                    if (footballTeam) {
+                        const badge = footballTeam.strBadge;
+                        teamBadgeCache[teamName] = { url: badge, source: 'sportsdb', name: footballTeam.strTeam };
+                        log(`  [SUCCESS] Found soccer team: ${footballTeam.strTeam}`);
+                        log(`[SUCCESS] Badge found via TheSportsDB for "${teamName}"\n`);
+                        return { url: badge, source: 'sportsdb', name: footballTeam.strTeam };
+                    }
+                }
+
+                log(`[FAILED] TheSportsDB did not have badge for "${teamName}"`);
+                return null;
+
+            } catch (error) {
+                log(`  [ERROR] ${error.message}`);
+                return null;
+            }
+        }
+
+        function exportMissingTeams() {
+            if (missingTeamBadges.length === 0) {
+                alert('No missing teams! All badges found from TheSportsDB.');
+                return;
+            }
+
+            const content = `# Missing Team Badges Report
+# Generated: ${new Date().toISOString()}
+# Teams not found in TheSportsDB - matches with these teams will be SKIPPED
+# Total: ${missingTeamBadges.length} teams
+
+${missingTeamBadges.map((team, index) => `${index + 1}. ${team}`).join('\n')}
+
+---
+IMPORTANT: These teams need badges to appear in the game.
+
+Next Steps:
+1. Search for each team manually on https://www.thesportsdb.com/
+2. If found with different name, add mapping to TEAM_NAME_MAPPING in game.js
+3. If not found, manually add the badge URL to the code
+4. Refresh and test again
+`;
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'MissingTeams.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            log(`[EXPORT] Exported ${missingTeamBadges.length} missing teams to MissingTeams.txt`);
+        }
+
+        async function runTests() {
+            // Reset
+            stats = { total: 0, sportsdb: 0, missing: 0 };
+            missingTeamBadges.length = 0;
+            document.getElementById('test-results').innerHTML = '';
+            clearLogs();
+
+            // Get random selection of teams for this test run
+            const testTeams = getRandomTestTeams(20);
+
+            log('========================================');
+            log('STARTING BADGE TESTS');
+            log(`Testing ${testTeams.length} randomly selected teams...`);
+            log(`Pool size: ${ALL_TEST_TEAMS.length} teams`);
+            log('========================================\n');
+
+            const resultsDiv = document.getElementById('test-results');
+
+            for (const teamName of testTeams) {
+                stats.total++;
+
+                try {
+                    const result = await fetchTeamBadge(teamName);
+
+                    const div = document.createElement('div');
+                    div.className = 'team-row';
+
+                    if (result) {
+                        // Badge found
+                        div.innerHTML = `
+                            <div class="badge-container">
+                                <img src="${result.url}" alt="${teamName}" class="badge">
+                            </div>
+                            <div class="team-info">
+                                <div class="team-name">${teamName}</div>
+                                <div class="team-detail">Found as: ${result.name}</div>
+                                <div class="team-detail">
+                                    <span class="source-badge source-sportsdb">TheSportsDB ✓</span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Badge not found
+                        div.innerHTML = `
+                            <div class="badge-container">
+                                <div style="width: 50px; height: 50px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #999; font-size: 20px;">?</div>
+                            </div>
+                            <div class="team-info">
+                                <div class="team-name">${teamName}</div>
+                                <div class="team-detail">Badge not found</div>
+                                <div class="team-detail">
+                                    <span class="source-badge source-placeholder">MISSING ✗</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    resultsDiv.appendChild(div);
+
+                    // Small delay to avoid overwhelming APIs
+                    await new Promise(resolve => setTimeout(resolve, 300));
+
+                } catch (error) {
+                    log(`[ERROR] Failed to test "${teamName}": ${error.message}`);
+
+                    const div = document.createElement('div');
+                    div.className = 'team-row';
+                    div.innerHTML = `
+                        <div class="team-info">
+                            <div class="team-name">${teamName}</div>
+                            <div class="team-detail">
+                                <span class="source-badge source-error">Error: ${error.message}</span>
+                            </div>
+                        </div>
+                    `;
+                    resultsDiv.appendChild(div);
+                }
+            }
+
+            updateSummary();
+
+            log('\n========================================');
+            log('TESTS COMPLETED');
+            log(`Total: ${stats.total} | TheSportsDB: ${stats.sportsdb} | Wikipedia: ${stats.wikipedia} | Placeholders: ${stats.placeholder}`);
+            log('========================================');
+
+            if (missingTeamBadges.length > 0) {
+                log(`\nMissing teams (${missingTeamBadges.length}): ${missingTeamBadges.join(', ')}`);
+                log('Run exportMissingTeams() to download full report.');
+            }
+        }
+
+        // Auto-run on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            log('Badge test page loaded. Click "Run Badge Tests" to start.\n');
+        });
+    </script>
+</body>
+</html>

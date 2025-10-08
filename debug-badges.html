@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Badge Loading Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #333; }
+        .team-test {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+        }
+        .badge {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+        .success { border-left: 4px solid #28a745; }
+        .fail { border-left: 4px solid #dc3545; }
+        .team-name { font-weight: bold; flex: 1; }
+        .search-name { color: #666; font-size: 0.9em; }
+        .status { padding: 5px 10px; border-radius: 3px; font-size: 0.9em; }
+        .status.ok { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Badge Loading Debug Tool</h1>
+    <p>Testing badge loading for all teams from OpenFootball data...</p>
+    <div id="results"></div>
+
+    <script>
+        const THESPORTSDB_API = 'https://www.thesportsdb.com/api/v1/json/3';
+
+        // Team name mapping
+        const TEAM_NAME_MAPPING = {
+            'PSG': 'Paris SG',
+            'Paris Saint Germain': 'Paris SG',
+            'AC Milan': 'Milan',
+            'Inter Milan': 'Inter',
+            'Atletico Madrid': 'Atletico',
+            'Manchester United': 'Man Utd',
+            'Manchester City': 'Man City',
+            'Newcastle United': 'Newcastle',
+            'Tottenham Hotspur': 'Tottenham',
+            'West Ham United': 'West Ham',
+            'Nottingham Forest': "Nott'm Forest",
+            'Brighton & Hove Albion': 'Brighton',
+            'Wolverhampton Wanderers': 'Wolves',
+            'AFC Bournemouth': 'Bournemouth',
+            'Real Betis Balompié': 'Real Betis',
+            'Atlético Madrid': 'Atletico',
+            'Celta de Vigo': 'Celta Vigo',
+            'Deportivo Alavés': 'Alaves',
+            'RCD Espanyol': 'Espanyol',
+            'Rayo Vallecano': 'Rayo',
+            'Borussia Dortmund': 'Dortmund',
+            'Borussia Mönchengladbach': 'Monchengladbach',
+            'Bayern München': 'Bayern Munich',
+            'FC Köln': 'FC Cologne',
+            '1. FSV Mainz 05': 'Mainz',
+            'Eintracht Frankfurt': 'Frankfurt',
+            'VfL Wolfsburg': 'Wolfsburg',
+            'Olympique Marseille': 'Marseille',
+            'Olympique Lyonnais': 'Lyon',
+            'AS Monaco': 'Monaco',
+            'OGC Nice': 'Nice',
+            'RC Lens': 'Lens',
+            'Stade de Reims': 'Reims',
+            'Stade Rennais': 'Rennes',
+            'FC Nantes': 'Nantes',
+            'Montpellier HSC': 'Montpellier',
+            'AS Saint-Étienne': 'Saint-Etienne',
+            'Le Havre AC': 'Le Havre'
+        };
+
+        // Sample teams from each league
+        const TEST_TEAMS = [
+            // Premier League
+            'Manchester United', 'Fulham', 'Liverpool', 'Arsenal',
+            'Wolverhampton Wanderers', 'Brighton & Hove Albion',
+            'Newcastle United', 'Manchester City', 'Chelsea', 'Tottenham Hotspur',
+
+            // Ligue 1
+            'Paris Saint-Germain', 'Olympique Marseille', 'Lyon', 'Monaco',
+            'Lille', 'Nice', 'Lens', 'Rennes', 'Reims', 'Montpellier',
+
+            // La Liga
+            'Real Madrid', 'Barcelona', 'Atletico Madrid', 'Sevilla', 'Valencia',
+
+            // Serie A
+            'Juventus', 'Inter Milan', 'AC Milan', 'Napoli', 'Roma',
+
+            // Bundesliga
+            'Bayern Munich', 'Borussia Dortmund', 'RB Leipzig', 'Bayer Leverkusen'
+        ];
+
+        function cleanTeamName(name) {
+            return name
+                .replace(/ FC$/, '')
+                .replace(/ AFC$/, '')
+                .replace(/ CF$/, '')
+                .replace(/ United FC$/, ' United')
+                .trim();
+        }
+
+        async function testTeamBadge(teamName) {
+            const resultsDiv = document.getElementById('results');
+            const testDiv = document.createElement('div');
+            testDiv.className = 'team-test';
+
+            const cleanedName = cleanTeamName(teamName);
+            const mappedName = TEAM_NAME_MAPPING[cleanedName] || cleanedName;
+
+            try {
+                const response = await fetch(`${THESPORTSDB_API}/searchteams.php?t=${encodeURIComponent(mappedName)}`);
+                const data = await response.json();
+
+                if (data.teams && data.teams.length > 0) {
+                    const footballTeam = data.teams.find(team => team.strSport === 'Soccer');
+                    const team = footballTeam || data.teams[0];
+
+                    testDiv.className += ' success';
+                    testDiv.innerHTML = `
+                        <img src="${team.strBadge}" alt="${teamName}" class="badge">
+                        <div style="flex: 1;">
+                            <div class="team-name">${cleanedName}</div>
+                            <div class="search-name">Search: "${mappedName}" → Found: "${team.strTeam}"</div>
+                        </div>
+                        <span class="status ok">OK</span>
+                    `;
+                } else {
+                    testDiv.className += ' fail';
+                    testDiv.innerHTML = `
+                        <div style="flex: 1;">
+                            <div class="team-name">${cleanedName}</div>
+                            <div class="search-name">Search: "${mappedName}" → NOT FOUND</div>
+                        </div>
+                        <span class="status error">FAILED</span>
+                    `;
+                }
+            } catch (error) {
+                testDiv.className += ' fail';
+                testDiv.innerHTML = `
+                    <div style="flex: 1;">
+                        <div class="team-name">${cleanedName}</div>
+                        <div class="search-name">Error: ${error.message}</div>
+                    </div>
+                    <span class="status error">ERROR</span>
+                `;
+            }
+
+            resultsDiv.appendChild(testDiv);
+        }
+
+        async function runTests() {
+            for (const team of TEST_TEAMS) {
+                await testTeamBadge(team);
+                // Small delay to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+        }
+
+        runTests();
+    </script>
+</body>
+</html>

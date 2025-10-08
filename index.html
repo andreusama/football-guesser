@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Results Guesser</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Football Results Guesser</h1>
+            <div class="stats">
+                <span>Score: <span id="score">0</span></span>
+                <span>Round: <span id="round">1</span>/10</span>
+            </div>
+        </header>
+
+        <div id="loading-screen" class="loading-screen">
+            <div class="loader"></div>
+            <p>Loading match data...</p>
+        </div>
+
+        <main id="game-container" class="hidden">
+            <div class="match-info">
+                <div class="league-badge">
+                    <img id="league-badge-img" src="" alt="League Badge" class="league-logo" style="display: none;">
+                    <span id="league-name">Premier League</span>
+                </div>
+                <div class="match-date">
+                    <span id="match-date">September 15, 2024</span>
+                </div>
+            </div>
+
+            <div class="teams">
+                <div class="team home-team">
+                    <div class="team-logo"></div>
+                    <h2 id="home-team">Manchester United</h2>
+                </div>
+
+                <div class="vs">VS</div>
+
+                <div class="team away-team">
+                    <div class="team-logo"></div>
+                    <h2 id="away-team">Liverpool</h2>
+                </div>
+            </div>
+
+            <div class="guess-section">
+                <h3>Guess the final score:</h3>
+                <div class="score-inputs">
+                    <div class="input-group">
+                        <label for="home-score">Home</label>
+                        <input type="number" id="home-score" min="0" max="20" value="0">
+                    </div>
+                    <span class="separator">-</span>
+                    <div class="input-group">
+                        <label for="away-score">Away</label>
+                        <input type="number" id="away-score" min="0" max="20" value="0">
+                    </div>
+                </div>
+                <button id="submit-guess" class="btn-primary">Submit Guess</button>
+            </div>
+
+            <div id="result-section" class="result-section hidden">
+                <div class="actual-score">
+                    <h3>Actual Score:</h3>
+                    <div class="score-display">
+                        <span id="actual-home">-</span> - <span id="actual-away">-</span>
+                    </div>
+                </div>
+                <div class="points-earned">
+                    <span id="points-message"></span>
+                </div>
+                <button id="next-round" class="btn-secondary">Next Round</button>
+            </div>
+        </main>
+
+        <div id="game-over" class="game-over hidden">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="final-score">0</span></p>
+            <p id="performance-message"></p>
+            <button id="play-again" class="btn-primary">Play Again</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
