@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TheSportsDB Only - Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        h1 { color: #4ec9b0; }
+        .subtitle { color: #999; margin-bottom: 30px; line-height: 1.6; }
+        .section {
+            background: #252526;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4ec9b0;
+        }
+        .log {
+            background: #1e1e1e;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-size: 13px;
+            line-height: 1.6;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        .warning { color: #ce9178; }
+        .info { color: #569cd6; }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #1177bb; }
+        .match-card {
+            background: #2d2d30;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .badge-img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            background: white;
+            border-radius: 4px;
+            padding: 5px;
+        }
+        .match-info {
+            flex: 1;
+        }
+        .score {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #4ec9b0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-box {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4ec9b0;
+        }
+        .stat-label {
+            color: #999;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>TheSportsDB Only - Architecture Test</h1>
+    <p class="subtitle">
+        Testing V3 architecture: Single source of truth using eventsseason.php<br>
+        • No OpenFootball<br>
+        • No name matching<br>
+        • All data from one endpoint per league
+    </p>
+
+    <div class="section">
+        <h2>Step 1: Load All Leagues</h2>
+        <p style="color: #999;">Fetch events from all 5 leagues and display statistics</p>
+        <button onclick="loadAllLeagues()">Load All Leagues</button>
+        <div id="leagues-log" class="log">Click button to load...</div>
+        <div id="leagues-stats"></div>
+    </div>
+
+    <div class="section">
+        <h2>Step 2: View Sample Matches</h2>
+        <p style="color: #999;">Display first 20 loaded matches with badges and scores</p>
+        <button onclick="showSampleMatches()">Show Sample Matches</button>
+        <div id="matches-log" class="log">Load leagues first...</div>
+        <div id="matches-display"></div>
+    </div>
+
+    <div class="section">
+        <h2>Step 3: Test Specific League</h2>
+        <p style="color: #999;">Deep dive into one league to verify data quality</p>
+        <button onclick="testLigue1()">Test Ligue 1 Deep Dive</button>
+        <div id="ligue1-log" class="log">Click button to test...</div>
+    </div>
+
+    <script>
+        const THESPORTSDB_API = 'https://www.thesportsdb.com/api/v1/json/3';
+
+        const LEAGUE_IDS = {
+            'Premier League': '4328',
+            'La Liga': '4335',
+            'Serie A': '4332',
+            'Bundesliga': '4331',
+            'Ligue 1': '4334'
+        };
+
+        const LEAGUE_FLAGS = {
+            'Premier League': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+            'La Liga': '🇪🇸',
+            'Serie A': '🇮🇹',
+            'Bundesliga': '🇩🇪',
+            'Ligue 1': '🇫🇷'
+        };
+
+        let allMatches = [];
+
+        function log(elementId, message, className = '') {
+            const element = document.getElementById(elementId);
+            const span = document.createElement('div');
+            span.className = className;
+            span.textContent = message;
+            element.appendChild(span);
+            element.scrollTop = element.scrollHeight;
+        }
+
+        function clearLog(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+
+        async function loadAllLeagues() {
+            clearLog('leagues-log');
+            allMatches = [];
+
+            log('leagues-log', '========================================', 'info');
+            log('leagues-log', 'LOADING FROM THESPORTSDB ONLY', 'info');
+            log('leagues-log', '========================================\n', 'info');
+
+            let totalEvents = 0;
+            let totalFinished = 0;
+            const leagueStats = {};
+
+            for (const [leagueName, leagueId] of Object.entries(LEAGUE_IDS)) {
+                log('leagues-log', `Loading ${leagueName}...`, 'warning');
+
+                try {
+                    const response = await fetch(`${THESPORTSDB_API}/eventsseason.php?id=${leagueId}&s=2024-2025`);
+                    const data = await response.json();
+
+                    if (data.events && Array.isArray(data.events)) {
+                        totalEvents += data.events.length;
+                        let finishedCount = 0;
+
+                        for (const event of data.events) {
+                            if (event.strStatus === 'Match Finished' &&
+                                event.intHomeScore !== null &&
+                                event.intAwayScore !== null) {
+
+                                allMatches.push({
+                                    league: leagueName,
+                                    home: event.strHomeTeam,
+                                    away: event.strAwayTeam,
+                                    homeScore: parseInt(event.intHomeScore),
+                                    awayScore: parseInt(event.intAwayScore),
+                                    date: event.dateEvent,
+                                    flag: LEAGUE_FLAGS[leagueName],
+                                    homeTeamData: {
+                                        idTeam: event.idHomeTeam,
+                                        strTeam: event.strHomeTeam,
+                                        strBadge: event.strHomeTeamBadge
+                                    },
+                                    awayTeamData: {
+                                        idTeam: event.idAwayTeam,
+                                        strTeam: event.strAwayTeam,
+                                        strBadge: event.strAwayTeamBadge
+                                    }
+                                });
+                                finishedCount++;
+                            }
+                        }
+
+                        totalFinished += finishedCount;
+                        leagueStats[leagueName] = {
+                            total: data.events.length,
+                            finished: finishedCount
+                        };
+
+                        log('leagues-log', `✓ ${leagueName}: ${finishedCount} finished matches (${data.events.length} total events)`, 'success');
+                    }
+                } catch (error) {
+                    log('leagues-log', `✗ Error loading ${leagueName}: ${error.message}`, 'error');
+                }
+            }
+
+            log('leagues-log', '\n========================================', 'info');
+            log('leagues-log', 'LOADING COMPLETE', 'success');
+            log('leagues-log', `Total events: ${totalEvents}`, 'info');
+            log('leagues-log', `Finished matches: ${totalFinished}`, 'success');
+            log('leagues-log', '========================================', 'info');
+
+            // Display stats
+            const statsHtml = `
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-number">${totalEvents}</div>
+                        <div class="stat-label">Total Events</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">${totalFinished}</div>
+                        <div class="stat-label">Finished Matches</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">5</div>
+                        <div class="stat-label">Leagues Loaded</div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('leagues-stats').innerHTML = statsHtml;
+        }
+
+        function showSampleMatches() {
+            clearLog('matches-log');
+            const matchesDisplay = document.getElementById('matches-display');
+            matchesDisplay.innerHTML = '';
+
+            if (allMatches.length === 0) {
+                log('matches-log', 'No matches loaded. Please load leagues first.', 'error');
+                return;
+            }
+
+            log('matches-log', '========================================', 'info');
+            log('matches-log', 'SAMPLE MATCHES WITH BADGES', 'info');
+            log('matches-log', `Showing first 20 of ${allMatches.length} matches`, 'info');
+            log('matches-log', '========================================\n', 'info');
+
+            const sample = allMatches.slice(0, 20);
+
+            sample.forEach((match, index) => {
+                const card = document.createElement('div');
+                card.className = 'match-card';
+                card.innerHTML = `
+                    <div style="color: #999; min-width: 30px;">#${index + 1}</div>
+                    <img src="${match.homeTeamData.strBadge}" class="badge-img" alt="${match.home}">
+                    <div class="match-info">
+                        <div style="font-weight: bold;">${match.home} vs ${match.away}</div>
+                        <div style="color: #999; font-size: 0.9em;">${match.league} • ${match.date}</div>
+                    </div>
+                    <div class="score">${match.homeScore} - ${match.awayScore}</div>
+                    <img src="${match.awayTeamData.strBadge}" class="badge-img" alt="${match.away}">
+                    <div style="font-size: 1.5em;">${match.flag}</div>
+                `;
+                matchesDisplay.appendChild(card);
+
+                log('matches-log', `✓ ${match.home} ${match.homeScore}-${match.awayScore} ${match.away}`, 'success');
+            });
+        }
+
+        async function testLigue1() {
+            clearLog('ligue1-log');
+
+            log('ligue1-log', '========================================', 'info');
+            log('ligue1-log', 'LIGUE 1 DEEP DIVE TEST', 'info');
+            log('ligue1-log', '========================================\n', 'info');
+
+            try {
+                const response = await fetch(`${THESPORTSDB_API}/eventsseason.php?id=4334&s=2024-2025`);
+                const data = await response.json();
+
+                log('ligue1-log', 'API Response Analysis:', 'warning');
+                log('ligue1-log', `Total events in response: ${data.events.length}`, 'info');
+
+                // Collect unique teams
+                const teams = new Set();
+                let finishedMatches = 0;
+                let upcomingMatches = 0;
+                let missingScores = 0;
+
+                data.events.forEach(event => {
+                    teams.add(event.strHomeTeam);
+                    teams.add(event.strAwayTeam);
+
+                    if (event.strStatus === 'Match Finished') {
+                        if (event.intHomeScore !== null && event.intAwayScore !== null) {
+                            finishedMatches++;
+                        } else {
+                            missingScores++;
+                        }
+                    } else {
+                        upcomingMatches++;
+                    }
+                });
+
+                log('ligue1-log', `\nUnique teams found: ${teams.size}`, 'success');
+                log('ligue1-log', 'Teams:', 'info');
+                Array.from(teams).sort().forEach((team, i) => {
+                    log('ligue1-log', `  ${i + 1}. ${team}`, 'info');
+                });
+
+                log('ligue1-log', `\nMatch Status Breakdown:`, 'warning');
+                log('ligue1-log', `  Finished (with scores): ${finishedMatches}`, 'success');
+                log('ligue1-log', `  Finished (missing scores): ${missingScores}`, missingScores > 0 ? 'error' : 'info');
+                log('ligue1-log', `  Upcoming: ${upcomingMatches}`, 'info');
+
+                // Check for key teams (verify TheSportsDB uses correct names)
+                log('ligue1-log', `\nKey Teams Verification:`, 'warning');
+                const keyTeams = [
+                    'Stade de Reims',
+                    'Nice',
+                    'Marseille',
+                    'Lens',
+                    'Paris SG',
+                    'Lyon',
+                    'Monaco',
+                    'Lille'
+                ];
+
+                keyTeams.forEach(teamName => {
+                    if (teams.has(teamName)) {
+                        log('ligue1-log', `  ✓ "${teamName}" found`, 'success');
+                    } else {
+                        log('ligue1-log', `  ✗ "${teamName}" not found`, 'error');
+                    }
+                });
+
+                // Sample match details
+                log('ligue1-log', `\nSample Finished Match Details:`, 'warning');
+                const sampleMatch = data.events.find(e =>
+                    e.strStatus === 'Match Finished' &&
+                    e.intHomeScore !== null
+                );
+
+                if (sampleMatch) {
+                    log('ligue1-log', `  Home: ${sampleMatch.strHomeTeam} (ID: ${sampleMatch.idHomeTeam})`, 'info');
+                    log('ligue1-log', `  Away: ${sampleMatch.strAwayTeam} (ID: ${sampleMatch.idAwayTeam})`, 'info');
+                    log('ligue1-log', `  Score: ${sampleMatch.intHomeScore} - ${sampleMatch.intAwayScore}`, 'success');
+                    log('ligue1-log', `  Date: ${sampleMatch.dateEvent}`, 'info');
+                    log('ligue1-log', `  Status: ${sampleMatch.strStatus}`, 'info');
+                    log('ligue1-log', `  Home Badge: ${sampleMatch.strHomeTeamBadge ? '✓ Present' : '✗ Missing'}`,
+                        sampleMatch.strHomeTeamBadge ? 'success' : 'error');
+                    log('ligue1-log', `  Away Badge: ${sampleMatch.strAwayTeamBadge ? '✓ Present' : '✗ Missing'}`,
+                        sampleMatch.strAwayTeamBadge ? 'success' : 'error');
+                }
+
+                log('ligue1-log', '\n========================================', 'success');
+                log('ligue1-log', '✓ LIGUE 1 TEST COMPLETE', 'success');
+                log('ligue1-log', '========================================', 'success');
+
+            } catch (error) {
+                log('ligue1-log', `Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

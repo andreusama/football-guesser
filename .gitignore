@@ -14,6 +14,7 @@ desktop.ini
 *.tmp
 *.log
 MissingTeams.txt
+ExcludedTeams.txt
 
 # Node modules (if you add npm later)
 node_modules/
