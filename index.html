@@ -21,6 +21,81 @@
             <p>Loading match data...</p>
         </div>
 
+        <div id="league-selection" class="league-selection hidden">
+            <h2>Choose Your League</h2>
+            <p class="subtitle">Select which league you want to guess matches from</p>
+            <div class="league-grid">
+                <div class="league-card" data-league="Premier League">
+                    <div class="league-badge-container">
+                        <img class="league-badge-select" id="badge-premier" src="" alt="Premier League" style="display: none;">
+                        <div class="league-flag">🏴󠁧󠁢󠁥󠁮󠁧󠁿</div>
+                    </div>
+                    <h3>Premier League</h3>
+                    <p class="league-country">England</p>
+                    <span class="match-count" id="count-premier">0 matches</span>
+                </div>
+                <div class="league-card" data-league="La Liga">
+                    <div class="league-badge-container">
+                        <img class="league-badge-select" id="badge-laliga" src="" alt="La Liga" style="display: none;">
+                        <div class="league-flag">🇪🇸</div>
+                    </div>
+                    <h3>La Liga</h3>
+                    <p class="league-country">Spain</p>
+                    <span class="match-count" id="count-laliga">0 matches</span>
+                </div>
+                <div class="league-card" data-league="Serie A">
+                    <div class="league-badge-container">
+                        <img class="league-badge-select" id="badge-seriea" src="" alt="Serie A" style="display: none;">
+                        <div class="league-flag">🇮🇹</div>
+                    </div>
+                    <h3>Serie A</h3>
+                    <p class="league-country">Italy</p>
+                    <span class="match-count" id="count-seriea">0 matches</span>
+                </div>
+                <div class="league-card" data-league="Bundesliga">
+                    <div class="league-badge-container">
+                        <img class="league-badge-select" id="badge-bundesliga" src="" alt="Bundesliga" style="display: none;">
+                        <div class="league-flag">🇩🇪</div>
+                    </div>
+                    <h3>Bundesliga</h3>
+                    <p class="league-country">Germany</p>
+                    <span class="match-count" id="count-bundesliga">0 matches</span>
+                </div>
+                <div class="league-card" data-league="Ligue 1">
+                    <div class="league-badge-container">
+                        <img class="league-badge-select" id="badge-ligue1" src="" alt="Ligue 1" style="display: none;">
+                        <div class="league-flag">🇫🇷</div>
+                    </div>
+                    <h3>Ligue 1</h3>
+                    <p class="league-country">France</p>
+                    <span class="match-count" id="count-ligue1">0 matches</span>
+                </div>
+                <div class="league-card all-leagues" data-league="All Leagues">
+                    <div class="league-badge-container">
+                        <div class="league-flag">⚽</div>
+                    </div>
+                    <h3>All Leagues</h3>
+                    <p class="league-country">Mix from all 5 leagues</p>
+                    <span class="match-count" id="count-all">0 matches</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="team-selection" class="team-selection hidden">
+            <h2>Choose a Team</h2>
+            <p class="subtitle">Select a specific team or play with all teams from <span id="selected-league-name"></span></p>
+            <div class="team-options">
+                <button id="play-all-teams" class="btn-play-all">
+                    <span class="all-teams-icon">⚽</span>
+                    <span>Play with All Teams</span>
+                </button>
+            </div>
+            <div id="team-grid" class="team-grid">
+                <!-- Teams will be dynamically loaded here -->
+            </div>
+            <button id="back-to-leagues" class="btn-back">← Back to League Selection</button>
+        </div>
+
         <main id="game-container" class="hidden">
             <div class="match-info">
                 <div class="league-badge">
@@ -80,7 +155,10 @@
             <h2>Game Over!</h2>
             <p>Final Score: <span id="final-score">0</span></p>
             <p id="performance-message"></p>
-            <button id="play-again" class="btn-primary">Play Again</button>
+            <div class="game-over-buttons">
+                <button id="play-again" class="btn-primary">Play Again (Same League)</button>
+                <button id="change-league" class="btn-secondary">Choose Different League</button>
+            </div>
         </div>
     </div>
 

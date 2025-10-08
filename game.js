@@ -33,6 +33,9 @@ class FootballGuesser {
         this.currentMatch = null;
         this.usedMatches = [];
         this.isLoading = true;
+        this.selectedLeague = null; // null means "All Leagues"
+        this.selectedTeam = null; // null means "All Teams"
+        this.availableMatches = []; // Filtered matches based on selected league/team
 
         this.initializeElements();
         this.attachEventListeners();
@@ -106,11 +109,9 @@ class FootballGuesser {
 
             this.isLoading = false;
 
-            // Hide loading screen and show game
+            // Hide loading screen and show league selection
             this.loadingScreen.classList.add('hidden');
-            this.gameContainer.classList.remove('hidden');
-
-            this.startNewGame();
+            this.showLeagueSelection();
         } catch (error) {
             console.error('Error loading match data:', error);
             this.loadingScreen.innerHTML = '<p style="color: #721c24;">Failed to load match data. Please refresh the page.</p>';
@@ -168,14 +169,33 @@ class FootballGuesser {
         this.finalScore = document.getElementById('final-score');
         this.performanceMessage = document.getElementById('performance-message');
         this.playAgainBtn = document.getElementById('play-again');
+        this.changeLeagueBtn = document.getElementById('change-league');
         this.teamLogos = document.querySelectorAll('.team-logo');
         this.loadingScreen = document.getElementById('loading-screen');
+        this.leagueSelection = document.getElementById('league-selection');
+        this.leagueCards = document.querySelectorAll('.league-card');
+        this.teamSelection = document.getElementById('team-selection');
+        this.teamGrid = document.getElementById('team-grid');
+        this.playAllTeamsBtn = document.getElementById('play-all-teams');
+        this.backToLeaguesBtn = document.getElementById('back-to-leagues');
+        this.selectedLeagueNameSpan = document.getElementById('selected-league-name');
     }
 
     attachEventListeners() {
         this.submitBtn.addEventListener('click', () => this.submitGuess());
         this.nextBtn.addEventListener('click', () => this.nextRound());
         this.playAgainBtn.addEventListener('click', () => this.startNewGame());
+        this.changeLeagueBtn.addEventListener('click', () => this.showLeagueSelection());
+        this.playAllTeamsBtn.addEventListener('click', () => this.selectTeam(null));
+        this.backToLeaguesBtn.addEventListener('click', () => this.showLeagueSelection());
+
+        // League selection cards
+        this.leagueCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const league = card.getAttribute('data-league');
+                this.selectLeague(league);
+            });
+        });
 
         // Allow Enter key to submit
         this.homeScoreInput.addEventListener('keypress', (e) => {
@@ -186,9 +206,154 @@ class FootballGuesser {
         });
     }
 
+    async showLeagueSelection() {
+        // Update match counts for each league
+        const leagueCounts = {};
+        matchDatabase.forEach(match => {
+            leagueCounts[match.league] = (leagueCounts[match.league] || 0) + 1;
+        });
+
+        document.getElementById('count-premier').textContent = `${leagueCounts['Premier League'] || 0} matches`;
+        document.getElementById('count-laliga').textContent = `${leagueCounts['La Liga'] || 0} matches`;
+        document.getElementById('count-seriea').textContent = `${leagueCounts['Serie A'] || 0} matches`;
+        document.getElementById('count-bundesliga').textContent = `${leagueCounts['Bundesliga'] || 0} matches`;
+        document.getElementById('count-ligue1').textContent = `${leagueCounts['Ligue 1'] || 0} matches`;
+        document.getElementById('count-all').textContent = `${matchDatabase.length} matches`;
+
+        // Load league badges for selection screen
+        await this.loadLeagueBadgesForSelection();
+
+        // Show league selection, hide ALL other screens
+        this.leagueSelection.classList.remove('hidden');
+        this.teamSelection.classList.add('hidden');
+        this.gameContainer.classList.add('hidden');
+        this.gameOver.classList.add('hidden');
+
+        // Reset selections
+        this.selectedLeague = null;
+        this.selectedTeam = null;
+    }
+
+    async loadLeagueBadgesForSelection() {
+        const leagueBadgeMap = {
+            'Premier League': 'badge-premier',
+            'La Liga': 'badge-laliga',
+            'Serie A': 'badge-seriea',
+            'Bundesliga': 'badge-bundesliga',
+            'Ligue 1': 'badge-ligue1'
+        };
+
+        for (const [leagueName, badgeId] of Object.entries(leagueBadgeMap)) {
+            const badgeElement = document.getElementById(badgeId);
+            const flagElement = badgeElement.nextElementSibling;
+
+            // Fetch league badge
+            const badge = await this.fetchLeagueBadge(leagueName);
+            if (badge && badgeElement) {
+                badgeElement.src = badge;
+                badgeElement.style.display = 'block';
+                if (flagElement) {
+                    flagElement.style.display = 'none';
+                }
+            }
+        }
+    }
+
+    selectLeague(league) {
+        console.log(`League selected: ${league}`);
+        this.selectedLeague = league;
+
+        // "All Leagues" goes directly to game (no team selection)
+        if (league === 'All Leagues') {
+            this.availableMatches = matchDatabase;
+            this.selectedTeam = null;
+            console.log(`Available matches: ${this.availableMatches.length}`);
+
+            // Hide league selection and start game
+            this.leagueSelection.classList.add('hidden');
+            this.startNewGame();
+        } else {
+            // Show team selection for specific leagues
+            this.showTeamSelection(league);
+        }
+    }
+
+    async showTeamSelection(leagueName) {
+        this.selectedLeagueNameSpan.textContent = leagueName;
+
+        // Get unique teams from selected league
+        const leagueMatches = matchDatabase.filter(match => match.league === leagueName);
+        const teamsMap = new Map();
+
+        leagueMatches.forEach(match => {
+            // Add home team
+            if (!teamsMap.has(match.homeTeamData.idTeam)) {
+                teamsMap.set(match.homeTeamData.idTeam, {
+                    id: match.homeTeamData.idTeam,
+                    name: match.homeTeamData.strTeam,
+                    badge: match.homeTeamData.strBadge
+                });
+            }
+            // Add away team
+            if (!teamsMap.has(match.awayTeamData.idTeam)) {
+                teamsMap.set(match.awayTeamData.idTeam, {
+                    id: match.awayTeamData.idTeam,
+                    name: match.awayTeamData.strTeam,
+                    badge: match.awayTeamData.strBadge
+                });
+            }
+        });
+
+        const teams = Array.from(teamsMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+        // Build team grid
+        this.teamGrid.innerHTML = '';
+        teams.forEach(team => {
+            const teamCard = document.createElement('div');
+            teamCard.className = 'team-card';
+            teamCard.setAttribute('data-team-id', team.id);
+            teamCard.innerHTML = `
+                <img src="${team.badge}" alt="${team.name}" class="team-card-badge">
+                <span class="team-card-name">${team.name}</span>
+            `;
+            teamCard.addEventListener('click', () => this.selectTeam(team.name));
+            this.teamGrid.appendChild(teamCard);
+        });
+
+        // Hide league selection, show team selection
+        this.leagueSelection.classList.add('hidden');
+        this.teamSelection.classList.remove('hidden');
+    }
+
+    selectTeam(teamName) {
+        this.selectedTeam = teamName;
+
+        if (teamName === null) {
+            // Play with all teams from selected league
+            this.availableMatches = matchDatabase.filter(match => match.league === this.selectedLeague);
+            console.log(`Playing with all teams from ${this.selectedLeague}: ${this.availableMatches.length} matches`);
+        } else {
+            // Filter to matches where selected team plays (home or away)
+            this.availableMatches = matchDatabase.filter(match =>
+                match.league === this.selectedLeague &&
+                (match.home === teamName || match.away === teamName)
+            );
+            console.log(`Playing with ${teamName}: ${this.availableMatches.length} matches`);
+        }
+
+        // Hide team selection and start game
+        this.teamSelection.classList.add('hidden');
+        this.startNewGame();
+    }
+
     startNewGame() {
         if (this.isLoading || matchDatabase.length === 0) {
             console.log('Still loading match data...');
+            return;
+        }
+
+        if (this.availableMatches.length === 0) {
+            console.log('No league selected yet');
             return;
         }
 
@@ -202,18 +367,18 @@ class FootballGuesser {
     }
 
     getRandomMatch() {
-        // Get matches that haven't been used yet
-        const availableMatches = matchDatabase.filter(
+        // Get matches from selected league that haven't been used yet
+        const unusedMatches = this.availableMatches.filter(
             match => !this.usedMatches.includes(match)
         );
 
-        if (availableMatches.length === 0) {
+        if (unusedMatches.length === 0) {
             // If all matches used, reset
             this.usedMatches = [];
-            return matchDatabase[Math.floor(Math.random() * matchDatabase.length)];
+            return this.availableMatches[Math.floor(Math.random() * this.availableMatches.length)];
         }
 
-        const randomMatch = availableMatches[Math.floor(Math.random() * availableMatches.length)];
+        const randomMatch = unusedMatches[Math.floor(Math.random() * unusedMatches.length)];
         this.usedMatches.push(randomMatch);
         return randomMatch;
     }
