@@ -64,15 +64,45 @@ class FootballGuesser {
             const allMatches = [];
             let totalMatchesProcessed = 0;
 
-            // Fetch matches from all 5 leagues
+            // Fetch matches from all 6 leagues with retry logic and delay
             for (const leagueName of Object.keys(COMPETITION_CODES)) {
                 try {
                     const competitionCode = COMPETITION_CODES[leagueName];
-                    const response = await fetch(`${FOOTBALL_DATA_API}?competition=${competitionCode}&season=2024`);
-                    const data = await response.json();
+
+                    // Retry logic for rate limiting
+                    let retries = 3;
+                    let response;
+                    let data;
+
+                    while (retries > 0) {
+                        try {
+                            response = await fetch(`${FOOTBALL_DATA_API}?competition=${competitionCode}&season=2024`);
+
+                            if (response.ok) {
+                                data = await response.json();
+                                break; // Success - exit retry loop
+                            } else if (response.status === 429 || response.status === 500) {
+                                // Rate limited or server error - retry with exponential backoff
+                                retries--;
+                                if (retries > 0) {
+                                    const waitTime = (4 - retries) * 2000; // 2s, 4s, 6s
+                                    console.log(`Rate limit hit for ${leagueName}, retrying in ${waitTime/1000}s... (${retries} retries left)`);
+                                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                                } else {
+                                    throw new Error(`Failed after 3 retries: ${response.status}`);
+                                }
+                            } else {
+                                throw new Error(`HTTP ${response.status}`);
+                            }
+                        } catch (fetchError) {
+                            retries--;
+                            if (retries === 0) throw fetchError;
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+                        }
+                    }
 
                     // Process matches from this league
-                    if (data.matches && Array.isArray(data.matches)) {
+                    if (data && data.matches && Array.isArray(data.matches)) {
                         totalMatchesProcessed += data.matches.length;
 
                         for (const match of data.matches) {
@@ -110,6 +140,9 @@ class FootballGuesser {
 
                     const includedCount = allMatches.filter(m => m.league === leagueName).length;
                     console.log(`${leagueName}: ${includedCount} matches loaded`);
+
+                    // Small delay between requests to avoid rate limiting (600ms = 10 requests per minute)
+                    await new Promise(resolve => setTimeout(resolve, 600));
                 } catch (error) {
                     console.error(`Error loading ${leagueName}:`, error);
                 }
