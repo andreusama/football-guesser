@@ -1,16 +1,28 @@
 // League configuration
 const LEAGUE_FLAGS = {
-    'Premier League': 'ENG',
+    'Premier League': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
     'La Liga': '🇪🇸',
     'Serie A': '🇮🇹',
     'Bundesliga': '🇩🇪',
     'Ligue 1': '🇫🇷'
 };
 
-// TheSportsDB API configuration - using Vercel serverless function to avoid CORS
+// Football-Data.org API configuration - using Vercel serverless function to avoid CORS
+const FOOTBALL_DATA_API = '/api/football-data';
+
+// Competition codes in Football-Data.org
+const COMPETITION_CODES = {
+    'Premier League': 'PL',
+    'La Liga': 'PD',
+    'Serie A': 'SA',
+    'Bundesliga': 'BL1',
+    'Ligue 1': 'FL1'
+};
+
+// TheSportsDB API for league badges - using Vercel serverless function
 const THESPORTSDB_API = '/api/sportsdb';
 
-// League IDs in TheSportsDB
+// League IDs in TheSportsDB for badges
 const LEAGUE_IDS = {
     'Premier League': '4328',
     'La Liga': '4335',
@@ -19,11 +31,11 @@ const LEAGUE_IDS = {
     'Ligue 1': '4334'
 };
 
-// Will hold all loaded matches from TheSportsDB
+// Will hold all loaded matches from Football-Data.org
 let matchDatabase = [];
 
-// Cache for league badges to avoid repeated API calls
-const leagueBadgeCache = {};
+// Cache for league emblems from TheSportsDB
+const leagueEmblemCache = {};
 
 class FootballGuesser {
     constructor() {
@@ -44,46 +56,49 @@ class FootballGuesser {
 
     async loadMatchData() {
         try {
-            console.log('Loading match data from TheSportsDB...');
-            console.log('Using single source of truth - all data comes from TheSportsDB events');
+            console.log('Loading match data from Football-Data.org...');
+            console.log('Season: 2024-2025');
             const allMatches = [];
-            let totalEventsProcessed = 0;
+            let totalMatchesProcessed = 0;
 
-            // Fetch events from all 5 leagues
-            for (const leagueName of Object.keys(LEAGUE_IDS)) {
+            // Fetch matches from all 5 leagues
+            for (const leagueName of Object.keys(COMPETITION_CODES)) {
                 try {
-                    const leagueId = LEAGUE_IDS[leagueName];
-                    const response = await fetch(`${THESPORTSDB_API}?endpoint=eventsseason.php&id=${leagueId}&s=2024-2025`);
+                    const competitionCode = COMPETITION_CODES[leagueName];
+                    const response = await fetch(`${FOOTBALL_DATA_API}?competition=${competitionCode}&season=2024`);
                     const data = await response.json();
 
-                    // Process events from this league
-                    if (data.events && Array.isArray(data.events)) {
-                        totalEventsProcessed += data.events.length;
+                    // Process matches from this league
+                    if (data.matches && Array.isArray(data.matches)) {
+                        totalMatchesProcessed += data.matches.length;
 
-                        for (const event of data.events) {
+                        for (const match of data.matches) {
                             // Only include finished matches with scores
-                            if (event.strStatus === 'Match Finished' &&
-                                event.intHomeScore !== null &&
-                                event.intAwayScore !== null) {
+                            if (match.status === 'FINISHED' &&
+                                match.score.fullTime.home !== null &&
+                                match.score.fullTime.away !== null) {
 
                                 allMatches.push({
                                     league: leagueName,
-                                    home: event.strHomeTeam,
-                                    away: event.strAwayTeam,
-                                    homeScore: parseInt(event.intHomeScore),
-                                    awayScore: parseInt(event.intAwayScore),
-                                    date: event.dateEvent,
+                                    home: match.homeTeam.shortName,
+                                    away: match.awayTeam.shortName,
+                                    homeScore: match.score.fullTime.home,
+                                    awayScore: match.score.fullTime.away,
+                                    date: match.utcDate.split('T')[0], // Extract date only
                                     flag: LEAGUE_FLAGS[leagueName],
-                                    // Store team data directly from event
+                                    matchday: match.matchday,
+                                    // Store team data from match
                                     homeTeamData: {
-                                        idTeam: event.idHomeTeam,
-                                        strTeam: event.strHomeTeam,
-                                        strBadge: event.strHomeTeamBadge
+                                        id: match.homeTeam.id,
+                                        name: match.homeTeam.name,
+                                        shortName: match.homeTeam.shortName,
+                                        crest: match.homeTeam.crest
                                     },
                                     awayTeamData: {
-                                        idTeam: event.idAwayTeam,
-                                        strTeam: event.strAwayTeam,
-                                        strBadge: event.strAwayTeamBadge
+                                        id: match.awayTeam.id,
+                                        name: match.awayTeam.name,
+                                        shortName: match.awayTeam.shortName,
+                                        crest: match.awayTeam.crest
                                     }
                                 });
                             }
@@ -91,7 +106,7 @@ class FootballGuesser {
                     }
 
                     const includedCount = allMatches.filter(m => m.league === leagueName).length;
-                    console.log(`${leagueName}: ${includedCount} matches loaded from TheSportsDB`);
+                    console.log(`${leagueName}: ${includedCount} matches loaded`);
                 } catch (error) {
                     console.error(`Error loading ${leagueName}:`, error);
                 }
@@ -102,10 +117,14 @@ class FootballGuesser {
             console.log('\n========================================');
             console.log('MATCH LOADING SUMMARY');
             console.log('========================================');
-            console.log(`Total events processed: ${totalEventsProcessed}`);
+            console.log(`Total matches processed: ${totalMatchesProcessed}`);
             console.log(`Finished matches loaded: ${matchDatabase.length}`);
-            console.log(`Source: TheSportsDB (single API, no matching needed)`);
+            console.log(`Source: Football-Data.org`);
             console.log('========================================\n');
+
+            // Load league badges from TheSportsDB
+            console.log('Loading league badges from TheSportsDB...');
+            await this.loadLeagueBadgesFromSportsDB();
 
             this.isLoading = false;
 
@@ -119,33 +138,32 @@ class FootballGuesser {
     }
 
     getTeamBadge(teamData) {
-        // Direct badge URL lookup from TheSportsDB team data
+        // Direct crest URL lookup from Football-Data.org team data
         // teamData is already pre-loaded and stored in match object during loadMatchData()
-        return teamData ? teamData.strBadge : null;
+        return teamData ? teamData.crest : null;
     }
 
-    async fetchLeagueBadge(leagueName) {
-        // Check cache first
-        if (leagueBadgeCache[leagueName]) {
-            return leagueBadgeCache[leagueName];
-        }
+    async loadLeagueBadgesFromSportsDB() {
+        // Fetch league badges from TheSportsDB for all leagues
+        for (const leagueName of Object.keys(LEAGUE_IDS)) {
+            try {
+                const leagueId = LEAGUE_IDS[leagueName];
+                const response = await fetch(`${THESPORTSDB_API}?endpoint=lookupleague.php&id=${leagueId}`);
+                const data = await response.json();
 
-        try {
-            const leagueId = LEAGUE_IDS[leagueName];
-            const response = await fetch(`${THESPORTSDB_API}?endpoint=lookupleague.php&id=${leagueId}`);
-            const data = await response.json();
-
-            if (data.leagues && data.leagues.length > 0) {
-                const badge = data.leagues[0].strBadge;
-                leagueBadgeCache[leagueName] = badge;
-                return badge;
+                if (data.leagues && data.leagues.length > 0 && data.leagues[0].strBadge) {
+                    leagueEmblemCache[leagueName] = data.leagues[0].strBadge;
+                    console.log(`✓ ${leagueName} badge loaded from TheSportsDB`);
+                }
+            } catch (error) {
+                console.error(`Error loading badge for ${leagueName}:`, error);
             }
-
-            return null;
-        } catch (error) {
-            console.error(`Error fetching badge for ${leagueName}:`, error);
-            return null;
         }
+    }
+
+    getLeagueEmblem(leagueName) {
+        // League emblems are cached from TheSportsDB
+        return leagueEmblemCache[leagueName] || null;
     }
 
     initializeElements() {
@@ -221,7 +239,7 @@ class FootballGuesser {
         document.getElementById('count-all').textContent = `${matchDatabase.length} matches`;
 
         // Load league badges for selection screen
-        await this.loadLeagueBadgesForSelection();
+        this.loadLeagueBadgesForSelection();
 
         // Show league selection, hide ALL other screens
         this.leagueSelection.classList.remove('hidden');
@@ -234,7 +252,7 @@ class FootballGuesser {
         this.selectedTeam = null;
     }
 
-    async loadLeagueBadgesForSelection() {
+    loadLeagueBadgesForSelection() {
         const leagueBadgeMap = {
             'Premier League': 'badge-premier',
             'La Liga': 'badge-laliga',
@@ -247,10 +265,10 @@ class FootballGuesser {
             const badgeElement = document.getElementById(badgeId);
             const flagElement = badgeElement.nextElementSibling;
 
-            // Fetch league badge
-            const badge = await this.fetchLeagueBadge(leagueName);
-            if (badge && badgeElement) {
-                badgeElement.src = badge;
+            // Get league emblem from cache (already loaded during loadMatchData)
+            const emblem = this.getLeagueEmblem(leagueName);
+            if (emblem && badgeElement) {
+                badgeElement.src = emblem;
                 badgeElement.style.display = 'block';
                 if (flagElement) {
                     flagElement.style.display = 'none';
@@ -287,19 +305,19 @@ class FootballGuesser {
 
         leagueMatches.forEach(match => {
             // Add home team
-            if (!teamsMap.has(match.homeTeamData.idTeam)) {
-                teamsMap.set(match.homeTeamData.idTeam, {
-                    id: match.homeTeamData.idTeam,
-                    name: match.homeTeamData.strTeam,
-                    badge: match.homeTeamData.strBadge
+            if (!teamsMap.has(match.homeTeamData.id)) {
+                teamsMap.set(match.homeTeamData.id, {
+                    id: match.homeTeamData.id,
+                    name: match.homeTeamData.shortName,
+                    badge: match.homeTeamData.crest
                 });
             }
             // Add away team
-            if (!teamsMap.has(match.awayTeamData.idTeam)) {
-                teamsMap.set(match.awayTeamData.idTeam, {
-                    id: match.awayTeamData.idTeam,
-                    name: match.awayTeamData.strTeam,
-                    badge: match.awayTeamData.strBadge
+            if (!teamsMap.has(match.awayTeamData.id)) {
+                teamsMap.set(match.awayTeamData.id, {
+                    id: match.awayTeamData.id,
+                    name: match.awayTeamData.shortName,
+                    badge: match.awayTeamData.crest
                 });
             }
         });
@@ -436,15 +454,15 @@ class FootballGuesser {
         }
     }
 
-    async loadLeagueLogo() {
+    loadLeagueLogo() {
         const leagueBadgeElement = document.getElementById('league-badge-img');
         if (!leagueBadgeElement) return;
 
         leagueBadgeElement.style.display = 'none';
 
-        const leagueBadge = await this.fetchLeagueBadge(this.currentMatch.league);
-        if (leagueBadge) {
-            leagueBadgeElement.src = leagueBadge;
+        const leagueEmblem = this.getLeagueEmblem(this.currentMatch.league);
+        if (leagueEmblem) {
+            leagueBadgeElement.src = leagueEmblem;
             leagueBadgeElement.style.display = 'inline-block';
         }
     }
@@ -519,19 +537,19 @@ class FootballGuesser {
         let className = '';
 
         if (points === 10) {
-            message = `Perfect! Exact score! +${points} points`;
+            message = `Perfect! Exact score! +${points} pts`;
             className = 'excellent';
         } else if (points === 7) {
-            message = `Great! Correct goal difference! +${points} points`;
-            className = 'excellent';
+            message = `Close! Goal difference correct +${points} pts`;
+            className = 'very-good';
         } else if (points === 5) {
-            message = `Good! Correct result! +${points} points`;
+            message = `Good! Correct result +${points} pts`;
             className = 'good';
         } else if (points === 3) {
-            message = `Not bad! One score correct! +${points} points`;
+            message = `One score correct +${points} pts`;
             className = 'okay';
         } else {
-            message = `Wrong guess! +${points} points`;
+            message = `Wrong +${points} pts`;
             className = 'poor';
         }
 

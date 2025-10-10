@@ -24,4 +24,12 @@ package-lock.json
 __pycache__/
 *.pyc
 *.pyo
+
+# Vercel
 .vercel
+
+# API tokens and credentials
+token.txt
+
+# Test JSON files
+*.json

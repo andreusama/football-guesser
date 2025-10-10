@@ -128,6 +128,14 @@
         <div id="ligue1-log" class="log">Click button to test...</div>
     </div>
 
+    <div class="section">
+        <h2>Step 4: Barcelona Games Debug</h2>
+        <p style="color: #999;">Display all Barcelona matches from La Liga for debugging</p>
+        <button onclick="debugBarcelonaGames()">Show All Barcelona Games</button>
+        <div id="barcelona-log" class="log">Click button to load...</div>
+        <div id="barcelona-matches"></div>
+    </div>
+
     <script>
         const THESPORTSDB_API = 'https://www.thesportsdb.com/api/v1/json/3';
 
@@ -381,6 +389,102 @@
 
             } catch (error) {
                 log('ligue1-log', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function debugBarcelonaGames() {
+            clearLog('barcelona-log');
+            const matchesDisplay = document.getElementById('barcelona-matches');
+            matchesDisplay.innerHTML = '';
+
+            log('barcelona-log', '========================================', 'info');
+            log('barcelona-log', 'BARCELONA GAMES DEBUG - LA LIGA', 'info');
+            log('barcelona-log', '========================================\n', 'info');
+
+            try {
+                // Fetch La Liga events (ID: 4335)
+                const response = await fetch(`${THESPORTSDB_API}/eventsseason.php?id=4335&s=2024-2025`);
+                const data = await response.json();
+
+                log('barcelona-log', `Total La Liga events: ${data.events.length}`, 'info');
+
+                // Find all Barcelona matches (home or away)
+                const barcelonaMatches = data.events.filter(event =>
+                    event.strHomeTeam === 'Barcelona' ||
+                    event.strAwayTeam === 'Barcelona' ||
+                    event.strHomeTeam?.includes('Barcelona') ||
+                    event.strAwayTeam?.includes('Barcelona')
+                );
+
+                log('barcelona-log', `Barcelona matches found: ${barcelonaMatches.length}`, 'success');
+                log('barcelona-log', '========================================\n', 'warning');
+
+                if (barcelonaMatches.length === 0) {
+                    log('barcelona-log', 'No Barcelona matches found!', 'error');
+                    log('barcelona-log', 'Checking first 10 team names in La Liga:', 'warning');
+                    data.events.slice(0, 10).forEach((event, i) => {
+                        log('barcelona-log', `${i + 1}. ${event.strHomeTeam} vs ${event.strAwayTeam}`, 'info');
+                    });
+                    return;
+                }
+
+                // Log all Barcelona matches
+                barcelonaMatches.forEach((match, index) => {
+                    const isHome = match.strHomeTeam === 'Barcelona' || match.strHomeTeam?.includes('Barcelona');
+                    const opponent = isHome ? match.strAwayTeam : match.strHomeTeam;
+                    const isFinished = match.strStatus === 'Match Finished';
+
+                    log('barcelona-log', `\nMatch #${index + 1}:`, 'warning');
+                    log('barcelona-log', `  Date: ${match.dateEvent}`, 'info');
+                    log('barcelona-log', `  ${match.strHomeTeam} vs ${match.strAwayTeam}`, 'info');
+                    log('barcelona-log', `  Status: ${match.strStatus}`, isFinished ? 'success' : 'warning');
+
+                    if (isFinished && match.intHomeScore !== null && match.intAwayScore !== null) {
+                        log('barcelona-log', `  Score: ${match.intHomeScore} - ${match.intAwayScore}`, 'success');
+                    } else if (isFinished) {
+                        log('barcelona-log', `  Score: Missing or null`, 'error');
+                    }
+
+                    log('barcelona-log', `  Home Badge: ${match.strHomeTeamBadge || 'Missing'}`, match.strHomeTeamBadge ? 'success' : 'error');
+                    log('barcelona-log', `  Away Badge: ${match.strAwayTeamBadge || 'Missing'}`, match.strAwayTeamBadge ? 'success' : 'error');
+                    log('barcelona-log', `  Home ID: ${match.idHomeTeam}`, 'info');
+                    log('barcelona-log', `  Away ID: ${match.idAwayTeam}`, 'info');
+
+                    // Create visual card for finished matches
+                    if (isFinished && match.intHomeScore !== null && match.intAwayScore !== null) {
+                        const card = document.createElement('div');
+                        card.className = 'match-card';
+                        card.innerHTML = `
+                            <div style="color: #999; min-width: 30px;">#${index + 1}</div>
+                            <img src="${match.strHomeTeamBadge}" class="badge-img" alt="${match.strHomeTeam}">
+                            <div class="match-info">
+                                <div style="font-weight: bold;">${match.strHomeTeam} vs ${match.strAwayTeam}</div>
+                                <div style="color: #999; font-size: 0.9em;">La Liga • ${match.dateEvent}</div>
+                            </div>
+                            <div class="score">${match.intHomeScore} - ${match.intAwayScore}</div>
+                            <img src="${match.strAwayTeamBadge}" class="badge-img" alt="${match.strAwayTeam}">
+                        `;
+                        matchesDisplay.appendChild(card);
+                    }
+                });
+
+                // Summary statistics
+                const finishedGames = barcelonaMatches.filter(m =>
+                    m.strStatus === 'Match Finished' &&
+                    m.intHomeScore !== null &&
+                    m.intAwayScore !== null
+                ).length;
+
+                log('barcelona-log', '\n========================================', 'info');
+                log('barcelona-log', 'SUMMARY', 'warning');
+                log('barcelona-log', `Total Barcelona matches: ${barcelonaMatches.length}`, 'info');
+                log('barcelona-log', `Finished with scores: ${finishedGames}`, 'success');
+                log('barcelona-log', `Upcoming: ${barcelonaMatches.length - finishedGames}`, 'info');
+                log('barcelona-log', '========================================', 'success');
+
+            } catch (error) {
+                log('barcelona-log', `Error: ${error.message}`, 'error');
+                console.error('Barcelona debug error:', error);
             }
         }
     </script>

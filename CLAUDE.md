@@ -1,82 +1,93 @@
-# SIMPLIFIED SYSTEM - TheSportsDB Only
+# HYBRID SYSTEM - Football-Data.org + TheSportsDB
 
 ## Architecture Evolution
 
 **V1 (Original):** OpenFootball results → Search TheSportsDB for badges → Wikipedia fallback → Placeholder
 **V2 (Attempted):** TheSportsDB teams → Filter OpenFootball matches → Name matching required
-**V3 (Current):** ✅ **TheSportsDB eventsseason.php - Single source for everything!**
+**V3 (Previous):** TheSportsDB eventsseason.php - Single source (limited to 50 events per league)
+**V4 (Current):** ✅ **Football-Data.org for matches + TheSportsDB for league badges**
 
-## Why V3 is Better
+## Why V4 is Better
 
-### Problem with V2:
-- TheSportsDB `lookup_all_teams.php` has data corruption (returns English teams for French league ID)
-- `lookuptable.php` only returns 5 teams (incomplete)
-- Required complex name matching between OpenFootball and TheSportsDB
-- Two APIs to maintain
+### Problem with V3:
+- TheSportsDB free API limited to **50 events per league** (only ~10 games per team)
+- Incomplete season data - couldn't get all 380 matches per league
+- Only recent/partial matches available
 
-### V3 Solution:
-- Use `eventsseason.php?id={leagueId}&s=2024-2025`
-- **One endpoint provides everything**: teams, badges, scores, dates
-- No name matching needed - everything comes from same source
-- Simpler, faster, more reliable
+### V4 Solution:
+- **Football-Data.org** for complete match data (380 matches per league)
+  - Free tier: 10 API calls/minute
+  - Full season coverage (2024-2025)
+  - Team crests included in API response
+- **TheSportsDB** for league badges only
+  - Current official league emblems
+  - 5 API calls total (one per league)
+- **Vercel serverless functions** to proxy both APIs and avoid CORS
+- Simpler, complete data, best of both worlds
 
 ## Current Implementation
 
-### Core Function: `loadMatchData()`
+### Data Loading Flow
 
 ```javascript
 async loadMatchData() {
-    const allMatches = [];
-
-    // Fetch events from all 5 leagues
-    for (const leagueName of Object.keys(LEAGUE_IDS)) {
-        const leagueId = LEAGUE_IDS[leagueName];
-        const response = await fetch(`${THESPORTSDB_API}/eventsseason.php?id=${leagueId}&s=2024-2025`);
+    // 1. Load matches from Football-Data.org (5 API calls)
+    for (const leagueName of Object.keys(COMPETITION_CODES)) {
+        const competitionCode = COMPETITION_CODES[leagueName]; // PL, PD, SA, BL1, FL1
+        const response = await fetch(`${FOOTBALL_DATA_API}?competition=${competitionCode}&season=2024`);
         const data = await response.json();
 
-        for (const event of data.events) {
-            // Only finished matches with scores
-            if (event.strStatus === 'Match Finished' &&
-                event.intHomeScore !== null &&
-                event.intAwayScore !== null) {
+        for (const match of data.matches) {
+            if (match.status === 'FINISHED' &&
+                match.score.fullTime.home !== null &&
+                match.score.fullTime.away !== null) {
 
                 allMatches.push({
                     league: leagueName,
-                    home: event.strHomeTeam,
-                    away: event.strAwayTeam,
-                    homeScore: parseInt(event.intHomeScore),
-                    awayScore: parseInt(event.intAwayScore),
-                    date: event.dateEvent,
-                    flag: LEAGUE_FLAGS[leagueName],
+                    home: match.homeTeam.shortName,
+                    away: match.awayTeam.shortName,
+                    homeScore: match.score.fullTime.home,
+                    awayScore: match.score.fullTime.away,
+                    date: match.utcDate.split('T')[0],
                     homeTeamData: {
-                        idTeam: event.idHomeTeam,
-                        strTeam: event.strHomeTeam,
-                        strBadge: event.strHomeTeamBadge
+                        id: match.homeTeam.id,
+                        name: match.homeTeam.name,
+                        shortName: match.homeTeam.shortName,
+                        crest: match.homeTeam.crest // Football-Data.org crest URL
                     },
                     awayTeamData: {
-                        idTeam: event.idAwayTeam,
-                        strTeam: event.strAwayTeam,
-                        strBadge: event.strAwayTeamBadge
+                        id: match.awayTeam.id,
+                        name: match.awayTeam.name,
+                        shortName: match.awayTeam.shortName,
+                        crest: match.awayTeam.crest
                     }
                 });
             }
         }
     }
 
-    matchDatabase = allMatches;
+    // 2. Load league badges from TheSportsDB (5 API calls)
+    await loadLeagueBadgesFromSportsDB();
 }
 ```
 
-### Event Data Structure
+### Match Data Structure (Football-Data.org)
 
-Each event from `eventsseason.php` contains:
-- **Team Names**: `strHomeTeam`, `strAwayTeam`
-- **Team IDs**: `idHomeTeam`, `idAwayTeam`
-- **Team Badges**: `strHomeTeamBadge`, `strAwayTeamBadge`
-- **Scores**: `intHomeScore`, `intAwayScore`
-- **Date**: `dateEvent`
-- **Status**: `strStatus` (filter for "Match Finished")
-- **League**: `strLeague`, `idLeague`
+Each match contains:
+- **Team Names**: `homeTeam.shortName`, `awayTeam.shortName`
+- **Team IDs**: `homeTeam.id`, `awayTeam.id`
+- **Team Crests**: `homeTeam.crest`, `awayTeam.crest` (from Football-Data.org)
+- **Scores**: `score.fullTime.home`, `score.fullTime.away`
+- **Date**: `utcDate`
+- **Status**: `status` (filter for "FINISHED")
+- **Matchday**: `matchday`
+
+### League Badges (TheSportsDB)
+
+League emblems fetched separately:
+- Endpoint: `lookupleague.php?id={leagueId}`
+- Cached in `leagueEmblemCache`
+- Used in league selection screen and match display
 
 ## Removed Code
 
@@ -107,59 +118,131 @@ Each event from `eventsseason.php` contains:
 ✅ **More reliable** - No matching failures, no exclusions
 ✅ **Easier maintenance** - Single source of truth
 
-## API Endpoint Issues (Documented)
+## API Endpoints
 
-### What DOESN'T Work:
+### Football-Data.org (Primary - Match Data)
 
-1. **`lookup_all_teams.php?id=4334`** ❌ DATA CORRUPTION
-   - Returns English League 1 teams instead of French Ligue 1
-   - Tested with multiple API keys - same issue
+**Endpoint:** `https://api.football-data.org/v4/competitions/{code}/matches?season=2024`
+- **Authentication:** API Token in `X-Auth-Token` header
+- **Rate Limit:** 10 calls per minute (free tier)
+- **Returns:** Complete season data (380 matches per league)
+- **Proxied via:** `/api/football-data` (Vercel serverless function)
 
-2. **`lookuptable.php?l=4334&s=2024-2025`** ❌ INCOMPLETE
-   - Only returns 5 teams instead of 18
-   - Missing most teams
+**Competition Codes:**
+- Premier League: `PL`
+- La Liga: `PD`
+- Serie A: `SA`
+- Bundesliga: `BL1`
+- Ligue 1: `FL1`
 
-### What WORKS:
+### TheSportsDB (Secondary - League Badges Only)
 
-3. **`eventsseason.php?id=4334&s=2024-2025`** ✅ PERFECT
-   - Returns all match events with complete data
-   - Includes team names, badges, scores, dates
-   - No data corruption
-   - Complete coverage
+**Endpoint:** `https://www.thesportsdb.com/api/v1/json/3/lookupleague.php?id={leagueId}`
+- **Authentication:** None (free tier with API key 3)
+- **Rate Limit:** Reasonable (not specified)
+- **Returns:** League information including badge URL
+- **Proxied via:** `/api/sportsdb` (Vercel serverless function)
+
+**League IDs:**
+- Premier League: `4328`
+- La Liga: `4335`
+- Serie A: `4332`
+- Bundesliga: `4331`
+- Ligue 1: `4334`
+
+### Why Not Use TheSportsDB for Everything?
+
+❌ **`eventsseason.php`** - Limited to 50 events per league (free tier)
+❌ **`lookup_all_teams.php`** - Data corruption issues
+❌ **`lookuptable.php`** - Incomplete team lists
+
+## Vercel Serverless Functions
+
+### `/api/football-data.js`
+Proxies Football-Data.org API requests:
+- Handles CORS by making server-side requests
+- Securely stores API token server-side
+- Query params: `?competition=PD&season=2024`
+
+### `/api/sportsdb.js`
+Proxies TheSportsDB API requests:
+- Handles CORS for league badge fetching
+- Query params: `?endpoint=lookupleague.php&id=4335`
+
+## UI/UX Improvements (October 2025)
+
+### Feedback System
+Updated point feedback messages and colors for better clarity:
+- **10 points (Exact score)**: Green - "Perfect! Exact score! +10 pts"
+- **7 points (Goal difference)**: Blue - "Close! Goal difference correct +7 pts"
+- **5 points (Correct result)**: Cyan - "Good! Correct result +5 pts"
+- **3 points (One score)**: Yellow - "One score correct +3 pts"
+- **0 points**: Red - "Wrong +0 pts"
+
+**Why the changes:**
+- Blue color for 7 points differentiates from perfect score (green)
+- Shortened messages ("pts" instead of "points") for mobile
+- Removed subjective judgments like "Great!" when answer wasn't correct
+- Better mobile responsiveness with smaller fonts and word wrapping
 
 ## Testing
 
-Open `index.html` and check browser console for:
+Run locally with Vercel dev server:
+```bash
+vercel dev
 ```
-Loading match data from TheSportsDB...
-Using single source of truth - all data comes from TheSportsDB events
-Premier League: 380 matches loaded from TheSportsDB
-La Liga: 380 matches loaded from TheSportsDB
-Serie A: 380 matches loaded from TheSportsDB
-Bundesliga: 306 matches loaded from TheSportsDB
-Ligue 1: 306 matches loaded from TheSportsDB
+
+Expected console output:
+```
+Loading match data from Football-Data.org...
+Season: 2024-2025
+Premier League: 380 matches loaded
+La Liga: 380 matches loaded
+Serie A: 380 matches loaded
+Bundesliga: 306 matches loaded
+Ligue 1: 306 matches loaded
 
 ========================================
 MATCH LOADING SUMMARY
 ========================================
-Total events processed: 1752
-Finished matches loaded: 1500
-Source: TheSportsDB (single API, no matching needed)
+Total matches processed: 1900
+Finished matches loaded: 1752
+Source: Football-Data.org
 ========================================
+
+Loading league badges from TheSportsDB...
+✓ Premier League badge loaded from TheSportsDB
+✓ La Liga badge loaded from TheSportsDB
+✓ Serie A badge loaded from TheSportsDB
+✓ Bundesliga badge loaded from TheSportsDB
+✓ Ligue 1 badge loaded from TheSportsDB
 ```
 
 ## Files
 
-- ✅ `game.js` - Complete refactor to use only TheSportsDB
-- ✅ `index.html` - Main game interface
-- ✅ `test-thesportsdb-only.html` - Test file for new architecture
-- ❌ `test-badges.html` - DELETED (legacy)
-- ❌ `test-new-system.html` - DELETED (legacy)
-- ❌ `test.html` - DELETED (legacy OpenFootball test)
+### Main Application
+- ✅ `public/game.js` - Hybrid system using Football-Data.org + TheSportsDB
+- ✅ `public/index.html` - Main game interface
+- ✅ `public/style.css` - Responsive styling with mobile support
 
-## Next Steps
+### Vercel Serverless Functions
+- ✅ `api/football-data.js` - Proxy for Football-Data.org API
+- ✅ `api/sportsdb.js` - Proxy for TheSportsDB API
+- ✅ `vercel.json` - Vercel configuration
 
-1. ⏳ Test game with real data
-2. ⏳ Update test files to match new architecture
-3. ⏳ Update README and documentation
-4. ⏳ Commit to GitHub
+### Testing & Documentation
+- ✅ `test-football-data-api.html` - Test Football-Data.org integration
+- ✅ `test-thesportsdb-only.html` - Test TheSportsDB integration
+- ✅ `CLAUDE.md` - This documentation file
+- ✅ `README.md` - Project overview
+- ⚠️ `token.txt` - Football-Data.org API token (DO NOT COMMIT)
+
+## Security Notes
+
+**IMPORTANT:** The file `token.txt` contains the Football-Data.org API token and should NOT be committed to version control. Add to `.gitignore`:
+```
+token.txt
+*.json
+```
+
+The token is safely stored in the Vercel serverless function (`api/football-data.js`) for production.

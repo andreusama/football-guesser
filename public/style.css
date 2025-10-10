@@ -241,11 +241,18 @@ header h1 {
     margin-bottom: 20px;
     padding: 15px;
     border-radius: 10px;
+    word-wrap: break-word;
+    line-height: 1.4;
 }
 
 .points-earned.excellent {
     background: #d4edda;
     color: #155724;
+}
+
+.points-earned.very-good {
+    background: #cfe2ff;
+    color: #084298;
 }
 
 .points-earned.good {
@@ -566,6 +573,19 @@ header h1 {
     .stats {
         flex-direction: column;
         gap: 10px;
+    }
+
+    .points-earned {
+        font-size: 1.1em;
+        padding: 12px;
+    }
+
+    .score-display {
+        font-size: 2.5em;
+    }
+
+    .result-section {
+        padding: 20px;
     }
 
     .league-selection h2 {
