@@ -7,6 +7,17 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Debug Toggle (Press D key to toggle, use number keys 1-5 to switch screens) -->
+    <div id="debug-panel" style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 8px; font-size: 12px; z-index: 9999; display: none;">
+        <div style="margin-bottom: 5px;"><strong>DEBUG MODE</strong></div>
+        <div>Press D to toggle</div>
+        <div>1: League Selection</div>
+        <div>2: Team Selection</div>
+        <div>3: Game Screen</div>
+        <div>4: Result Screen</div>
+        <div>5: Game Over</div>
+    </div>
+
     <div class="container">
         <header>
             <h1>Football Results Guesser</h1>
@@ -163,5 +174,110 @@
     </div>
 
     <script src="game.js"></script>
+    <script>
+        // Debug Mode Toggle
+        let debugMode = false;
+        document.addEventListener('keydown', (e) => {
+            // Toggle debug mode with 'D' key
+            if (e.key === 'd' || e.key === 'D') {
+                debugMode = !debugMode;
+                document.getElementById('debug-panel').style.display = debugMode ? 'block' : 'none';
+                console.log('Debug mode:', debugMode ? 'ON' : 'OFF');
+            }
+
+            // Only respond to number keys if debug mode is on
+            if (!debugMode) return;
+
+            // Hide all screens
+            const hideAll = () => {
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('league-selection').classList.add('hidden');
+                document.getElementById('team-selection').classList.add('hidden');
+                document.getElementById('game-container').classList.add('hidden');
+                document.getElementById('result-section').classList.add('hidden');
+                document.getElementById('game-over').classList.add('hidden');
+            };
+
+            // Show placeholder data for different screens
+            switch(e.key) {
+                case '1': // League Selection
+                    hideAll();
+                    document.getElementById('league-selection').classList.remove('hidden');
+                    // Add placeholder match counts
+                    document.getElementById('count-premier').textContent = '380 matches';
+                    document.getElementById('count-laliga').textContent = '380 matches';
+                    document.getElementById('count-seriea').textContent = '380 matches';
+                    document.getElementById('count-bundesliga').textContent = '306 matches';
+                    document.getElementById('count-ligue1').textContent = '306 matches';
+                    document.getElementById('count-all').textContent = '1752 matches';
+                    break;
+
+                case '2': // Team Selection
+                    hideAll();
+                    document.getElementById('team-selection').classList.remove('hidden');
+                    document.getElementById('selected-league-name').textContent = 'Premier League';
+                    // Add placeholder teams
+                    const teamGrid = document.getElementById('team-grid');
+                    teamGrid.innerHTML = `
+                        <div class="team-card">
+                            <div style="width: 60px; height: 60px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center;">⚽</div>
+                            <div class="team-card-name">Arsenal</div>
+                        </div>
+                        <div class="team-card">
+                            <div style="width: 60px; height: 60px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center;">⚽</div>
+                            <div class="team-card-name">Chelsea</div>
+                        </div>
+                        <div class="team-card">
+                            <div style="width: 60px; height: 60px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center;">⚽</div>
+                            <div class="team-card-name">Liverpool</div>
+                        </div>
+                        <div class="team-card">
+                            <div style="width: 60px; height: 60px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center;">⚽</div>
+                            <div class="team-card-name">Man United</div>
+                        </div>
+                    `;
+                    break;
+
+                case '3': // Game Screen
+                    hideAll();
+                    document.getElementById('game-container').classList.remove('hidden');
+                    document.getElementById('league-name').textContent = 'Premier League';
+                    document.getElementById('match-date').textContent = 'May 10, 2025';
+                    document.getElementById('home-team').textContent = 'Bournemouth';
+                    document.getElementById('away-team').textContent = 'Aston Villa';
+                    // Add placeholder badges
+                    document.querySelector('.home-team .team-logo').innerHTML = '<div style="width: 100px; height: 100px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3em;">⚽</div>';
+                    document.querySelector('.away-team .team-logo').innerHTML = '<div style="width: 100px; height: 100px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3em;">⚽</div>';
+                    break;
+
+                case '4': // Result Screen
+                    hideAll();
+                    document.getElementById('game-container').classList.remove('hidden');
+                    document.getElementById('result-section').classList.remove('hidden');
+                    document.getElementById('league-name').textContent = 'Premier League';
+                    document.getElementById('match-date').textContent = 'May 10, 2025';
+                    document.getElementById('home-team').textContent = 'Bournemouth';
+                    document.getElementById('away-team').textContent = 'Aston Villa';
+                    document.getElementById('actual-home').textContent = '2';
+                    document.getElementById('actual-away').textContent = '1';
+                    document.getElementById('points-message').textContent = 'Perfect! Exact score! +10 pts';
+                    document.querySelector('#result-section .points-earned').className = 'points-earned excellent';
+                    document.getElementById('score').textContent = '10';
+                    // Add placeholder badges
+                    document.querySelector('.home-team .team-logo').innerHTML = '<div style="width: 100px; height: 100px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3em;">⚽</div>';
+                    document.querySelector('.away-team .team-logo').innerHTML = '<div style="width: 100px; height: 100px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3em;">⚽</div>';
+                    break;
+
+                case '5': // Game Over
+                    hideAll();
+                    document.getElementById('game-over').classList.remove('hidden');
+                    document.getElementById('final-score').textContent = '30';
+                    document.getElementById('performance-message').textContent = 'Room for improvement! Try again!';
+                    document.getElementById('score').textContent = '30';
+                    document.getElementById('round').textContent = '10';
+                    break;
+            }
+        });
+    </script>
 </body>
 </html>

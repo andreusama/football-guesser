@@ -1,3 +1,10 @@
+@font-face {
+    font-family: 'Cursed Timer';
+    src: url('fonts/CursedTimerUlil-Aznm.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -6,7 +13,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #1a3a2e;
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -29,7 +36,7 @@ header {
 }
 
 header h1 {
-    color: #333;
+    color: #1a3a2e;
     font-size: 2.5em;
     margin-bottom: 20px;
 }
@@ -44,7 +51,7 @@ header h1 {
 }
 
 .stats span span {
-    color: #667eea;
+    color: #4dd21d;
 }
 
 .match-info {
@@ -53,7 +60,7 @@ header h1 {
 }
 
 .league-badge {
-    background: #667eea;
+    background: #2d5a3d;
     color: white;
     display: inline-flex;
     align-items: center;
@@ -109,20 +116,20 @@ header h1 {
     width: 40px;
     height: 40px;
     border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
+    border-top: 4px solid #4dd21d;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
 
 .team h2 {
-    color: #333;
+    color: #1a3a2e;
     font-size: 1.5em;
 }
 
 .vs {
     font-size: 1.5em;
     font-weight: bold;
-    color: #667eea;
+    color: #1a3a2e;
     padding: 0 20px;
 }
 
@@ -134,7 +141,7 @@ header h1 {
 }
 
 .guess-section h3 {
-    color: #333;
+    color: #1a3a2e;
     margin-bottom: 20px;
 }
 
@@ -163,21 +170,23 @@ header h1 {
     height: 60px;
     font-size: 2em;
     text-align: center;
-    border: 2px solid #ddd;
+    border: 2px solid #e0e0e0;
     border-radius: 10px;
     font-weight: bold;
-    color: #333;
+    color: #1a3a2e;
+    font-family: 'Cursed Timer', monospace;
 }
 
 .input-group input::placeholder {
-    color: #333;
+    color: #bdbdbd;
     opacity: 1;
     font-weight: bold;
 }
 
 .input-group input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #ffd166;
+    box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.2);
 }
 
 .separator {
@@ -197,25 +206,30 @@ header h1 {
 }
 
 .btn-primary {
-    background: #667eea;
+    background: linear-gradient(135deg, rgba(77, 210, 29, 0.9), rgba(45, 90, 61, 0.9)), url('grass.jpg');
+    background-size: cover;
+    background-position: center;
     color: white;
+    border: 2px solid #4dd21d;
 }
 
 .btn-primary:hover {
-    background: #5568d3;
+    background: linear-gradient(135deg, rgba(45, 90, 61, 0.95), rgba(26, 58, 46, 0.95)), url('grass.jpg');
+    background-size: cover;
+    background-position: center;
+    border-color: #4dd21d;
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 5px 15px rgba(77, 210, 29, 0.4);
 }
 
 .btn-secondary {
-    background: #28a745;
-    color: white;
+    background: linear-gradient(135deg, #ffd166, #ff9800);
+    color: #1a3a2e;
 }
 
 .btn-secondary:hover {
-    background: #218838;
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+    box-shadow: 0 5px 15px rgba(255, 209, 102, 0.4);
 }
 
 .result-section {
@@ -231,15 +245,16 @@ header h1 {
 }
 
 .actual-score h3 {
-    color: #333;
+    color: #1a3a2e;
     margin-bottom: 10px;
 }
 
 .score-display {
     font-size: 3em;
     font-weight: bold;
-    color: #667eea;
+    color: #1a3a2e;
     margin: 20px 0;
+    font-family: 'Cursed Timer', monospace;
 }
 
 .points-earned {
@@ -252,28 +267,28 @@ header h1 {
 }
 
 .points-earned.excellent {
-    background: #d4edda;
-    color: #155724;
+    background: linear-gradient(135deg, #4dd21d, #2d5a3d);
+    color: white;
 }
 
 .points-earned.very-good {
-    background: #cfe2ff;
-    color: #084298;
+    background: linear-gradient(135deg, #4dd21d, #00bcd4);
+    color: white;
 }
 
 .points-earned.good {
-    background: #d1ecf1;
-    color: #0c5460;
+    background: linear-gradient(135deg, #ffd166, #ff9800);
+    color: white;
 }
 
 .points-earned.okay {
-    background: #fff3cd;
-    color: #856404;
+    background: linear-gradient(135deg, #ff9800, #ff5722);
+    color: white;
 }
 
 .points-earned.poor {
-    background: #f8d7da;
-    color: #721c24;
+    background: linear-gradient(135deg, #ff5722, #d32f2f);
+    color: white;
 }
 
 .hidden {
@@ -287,7 +302,7 @@ header h1 {
 
 .loader {
     border: 5px solid #f3f3f3;
-    border-top: 5px solid #667eea;
+    border-top: 5px solid #4dd21d;
     border-radius: 50%;
     width: 60px;
     height: 60px;
@@ -309,10 +324,13 @@ header h1 {
 .game-over {
     text-align: center;
     padding: 40px 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 60vh;
 }
 
 .game-over h2 {
-    color: #333;
+    color: #1a3a2e;
     font-size: 2.5em;
     margin-bottom: 20px;
 }
@@ -324,21 +342,24 @@ header h1 {
 }
 
 #final-score {
-    color: #667eea;
+    color: #4dd21d;
     font-weight: bold;
     font-size: 1.5em;
 }
 
 #performance-message {
-    color: #333;
+    color: #1a3a2e;
     font-weight: 600;
 }
 
 .game-over-buttons {
     display: flex;
+    flex-direction: column;
     gap: 15px;
     justify-content: center;
-    margin-top: 20px;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 20px;
 }
 
 /* League Selection Screen */
@@ -348,7 +369,7 @@ header h1 {
 }
 
 .league-selection h2 {
-    color: #333;
+    color: #1a3a2e;
     font-size: 2.2em;
     margin-bottom: 10px;
 }
@@ -379,11 +400,11 @@ header h1 {
 .league-card:hover {
     transform: translateY(-8px);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-    border-color: #667eea;
+    border-color: #4dd21d;
 }
 
 .league-card.all-leagues {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2d5a3d 0%, #1a3a2e 100%);
     color: white;
 }
 
@@ -417,7 +438,7 @@ header h1 {
 }
 
 .league-card h3 {
-    color: #333;
+    color: #1a3a2e;
     font-size: 1.4em;
     margin-bottom: 8px;
 }
@@ -430,8 +451,8 @@ header h1 {
 
 .match-count {
     display: inline-block;
-    background: rgba(102, 126, 234, 0.1);
-    color: #667eea;
+    background: rgba(77, 210, 29, 0.1);
+    color: #2d5a3d;
     padding: 6px 14px;
     border-radius: 20px;
     font-size: 0.9em;
@@ -450,7 +471,7 @@ header h1 {
 }
 
 .team-selection h2 {
-    color: #333;
+    color: #1a3a2e;
     font-size: 2.2em;
     margin-bottom: 10px;
 }
@@ -462,7 +483,7 @@ header h1 {
 }
 
 #selected-league-name {
-    color: #667eea;
+    color: #2d5a3d;
     font-weight: 600;
 }
 
@@ -471,16 +492,16 @@ header h1 {
 }
 
 .btn-play-all {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2d5a3d 0%, #1a3a2e 100%);
     color: white;
-    border: none;
+    border: 2px solid #4dd21d;
     padding: 18px 40px;
     border-radius: 12px;
     font-size: 1.1em;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 15px rgba(45, 90, 61, 0.3);
     display: inline-flex;
     align-items: center;
     gap: 12px;
@@ -488,7 +509,7 @@ header h1 {
 
 .btn-play-all:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 8px 25px rgba(77, 210, 29, 0.4);
 }
 
 .all-teams-icon {
@@ -518,7 +539,7 @@ header h1 {
 .team-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    border-color: #667eea;
+    border-color: #4dd21d;
 }
 
 .team-card-badge {
@@ -529,7 +550,7 @@ header h1 {
 
 .team-card-name {
     font-size: 0.9em;
-    color: #333;
+    color: #1a3a2e;
     font-weight: 600;
     text-align: center;
     line-height: 1.3;
