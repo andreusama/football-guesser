@@ -7,8 +7,8 @@ const LEAGUE_FLAGS = {
     'Ligue 1': '🇫🇷'
 };
 
-// TheSportsDB API configuration
-const THESPORTSDB_API = 'https://www.thesportsdb.com/api/v1/json/3';
+// TheSportsDB API configuration - using Vercel serverless function to avoid CORS
+const THESPORTSDB_API = '/api/sportsdb';
 
 // League IDs in TheSportsDB
 const LEAGUE_IDS = {
@@ -53,7 +53,7 @@ class FootballGuesser {
             for (const leagueName of Object.keys(LEAGUE_IDS)) {
                 try {
                     const leagueId = LEAGUE_IDS[leagueName];
-                    const response = await fetch(`${THESPORTSDB_API}/eventsseason.php?id=${leagueId}&s=2024-2025`);
+                    const response = await fetch(`${THESPORTSDB_API}?endpoint=eventsseason.php&id=${leagueId}&s=2024-2025`);
                     const data = await response.json();
 
                     // Process events from this league
@@ -132,7 +132,7 @@ class FootballGuesser {
 
         try {
             const leagueId = LEAGUE_IDS[leagueName];
-            const response = await fetch(`${THESPORTSDB_API}/lookupleague.php?id=${leagueId}`);
+            const response = await fetch(`${THESPORTSDB_API}?endpoint=lookupleague.php&id=${leagueId}`);
             const data = await response.json();
 
             if (data.leagues && data.leagues.length > 0) {
