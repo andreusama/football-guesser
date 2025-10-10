@@ -142,7 +142,10 @@ header h1 {
 }
 
 .actual-score-inline {
-    margin-bottom: 20px;
+    background: #f8f9fa;
+    padding: 20px 30px;
+    border-radius: 15px;
+    text-align: center;
 }
 
 .actual-score-inline h3 {
@@ -159,7 +162,7 @@ header h1 {
 
 .guess-section h3 {
     color: #1a3a2e;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
 }
 
 .score-inputs {
@@ -220,6 +223,8 @@ header h1 {
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
+    width: 100%;
+    max-width: 300px;
 }
 
 .btn-primary {
@@ -241,7 +246,10 @@ header h1 {
 
 .btn-secondary {
     background: linear-gradient(135deg, #ffd166, #ff9800);
+    background-size: cover;
+    background-position: center;
     color: #1a3a2e;
+    border: 2px solid transparent;
 }
 
 .btn-secondary:hover {
@@ -310,6 +318,10 @@ header h1 {
 
 .hidden {
     display: none !important;
+}
+
+.invisible {
+    visibility: hidden !important;
 }
 
 .loading-screen {
@@ -786,11 +798,6 @@ header h1 {
         font-size: clamp(0.75em, 3.2vw, 0.9em);
         padding: 1.2vh 2vw;
         margin-bottom: 0.8vh;
-    }
-
-    .btn-secondary {
-        padding: 1.5vh 4vw;
-        font-size: clamp(0.85em, 3.5vw, 1em);
     }
 
     .league-selection h2 {

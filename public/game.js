@@ -447,14 +447,13 @@ class FootballGuesser {
 
         // Reset heading and button
         this.guessHeading.textContent = 'Guess the final score:';
-        this.guessHeading.classList.remove('hidden');
         this.submitBtn.textContent = 'Submit Guess';
         this.submitBtn.className = 'btn-primary';
         this.submitBtn.disabled = false;
 
-        // Hide result elements
-        this.resultMessage.classList.add('hidden');
-        this.actualScoreDisplay.classList.add('hidden');
+        // Hide result elements (invisible keeps space)
+        this.resultMessage.classList.add('invisible');
+        this.actualScoreDisplay.classList.add('invisible');
     }
 
     loadTeamBadges() {
@@ -527,17 +526,17 @@ class FootballGuesser {
         this.homeScoreInput.readOnly = true;
         this.awayScoreInput.readOnly = true;
 
-        // Hide the heading
-        this.guessHeading.classList.add('hidden');
+        // Change heading to show context
+        this.guessHeading.textContent = 'Your guessing was:';
 
         // Show result message
         this.displayResult(points);
-        this.resultMessage.classList.remove('hidden');
+        this.resultMessage.classList.remove('invisible');
 
         // Show actual score
         this.actualHome.textContent = actualHome;
         this.actualAway.textContent = actualAway;
-        this.actualScoreDisplay.classList.remove('hidden');
+        this.actualScoreDisplay.classList.remove('invisible');
 
         // Transform button to gold "Next Round"
         this.submitBtn.textContent = 'Next Round';
