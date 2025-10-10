@@ -548,44 +548,205 @@ header h1 {
 }
 
 @media (max-width: 600px) {
+    body {
+        padding: 8px;
+        min-height: 100vh;
+        display: flex;
+    }
+
     .container {
-        padding: 20px;
+        padding: 12px;
+        min-height: calc(100vh - 16px);
+        height: 100%;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    /* When game container is active, prevent scrolling and fit everything */
+    .container:has(#game-container:not(.hidden)) {
+        height: calc(100vh - 16px);
+        max-height: calc(100vh - 16px);
+        overflow: hidden;
+    }
+
+    header {
+        margin-bottom: 2vh;
+    }
+
+    .container:has(#game-container:not(.hidden)) header {
+        margin-bottom: 1vh;
+        flex-shrink: 0;
     }
 
     header h1 {
-        font-size: 1.8em;
-    }
-
-    .teams {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .vs {
-        transform: rotate(90deg);
-        margin: 10px 0;
-    }
-
-    .team h2 {
-        font-size: 1.2em;
+        font-size: clamp(1em, 4vw, 1.3em);
+        margin-bottom: 6px;
     }
 
     .stats {
+        flex-direction: row;
+        gap: 5vw;
+        font-size: clamp(0.75em, 3vw, 0.9em);
+    }
+
+    .match-info {
+        flex-shrink: 0;
+        margin-bottom: 1vh;
+    }
+
+    .league-badge {
+        padding: 5px 15px;
+        font-size: clamp(0.75em, 3vw, 0.9em);
+        margin-bottom: 4px;
+    }
+
+    .league-logo {
+        height: clamp(18px, 4vw, 24px);
+    }
+
+    .match-date {
+        font-size: clamp(0.7em, 2.5vw, 0.8em);
+    }
+
+    /* Game container - fit all content without scrolling */
+    #game-container {
+        display: flex;
         flex-direction: column;
-        gap: 10px;
+        flex: 1;
+        min-height: 0;
     }
 
-    .points-earned {
-        font-size: 1.1em;
-        padding: 12px;
+    .container:has(#game-container:not(.hidden)) #game-container {
+        flex: 1;
     }
 
-    .score-display {
-        font-size: 2.5em;
+    .teams {
+        flex-direction: row;
+        gap: 2vw;
+        margin: 2vh 0 1.5vh 0;
+        align-items: center;
+        flex: 1;
+        min-height: 0;
+    }
+
+    .team {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .team-logo {
+        height: 18vh;
+        min-height: 70px;
+        max-height: 120px;
+        width: 100%;
+        margin-bottom: 1vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .team-badge {
+        max-width: 85%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+    }
+
+    .vs {
+        font-size: clamp(1em, 4vw, 1.3em);
+        padding: 0 1vw;
+        transform: none;
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    .team h2 {
+        font-size: clamp(0.85em, 3.5vw, 1em);
+        line-height: 1.1;
+        text-align: center;
+    }
+
+    .guess-section {
+        padding: 2vh 3vw;
+        margin-top: 0;
+        flex-shrink: 0;
+    }
+
+    .guess-section h3 {
+        font-size: clamp(0.85em, 3.5vw, 1em);
+        margin-bottom: 1.2vh;
+    }
+
+    .score-inputs {
+        gap: 3vw;
+        margin-bottom: 1.5vh;
+    }
+
+    .input-group {
+        gap: 0.3vh;
+    }
+
+    .input-group label {
+        font-size: clamp(0.65em, 2.8vw, 0.8em);
+    }
+
+    .input-group input {
+        width: 20vw;
+        min-width: 55px;
+        max-width: 85px;
+        height: 8vh;
+        min-height: 48px;
+        max-height: 70px;
+        font-size: clamp(1.4em, 5.5vw, 1.9em);
+    }
+
+    .separator {
+        font-size: clamp(1.4em, 5.5vw, 1.9em);
+    }
+
+    .btn-primary, .btn-secondary {
+        padding: 1.8vh 5vw;
+        font-size: clamp(0.9em, 3.8vw, 1.05em);
+        width: 100%;
+        max-width: 300px;
     }
 
     .result-section {
-        padding: 20px;
+        padding: 1.5vh 3vw;
+        margin-top: 0.5vh;
+        flex-shrink: 0;
+    }
+
+    .actual-score {
+        margin-bottom: 0.8vh;
+    }
+
+    .actual-score h3 {
+        font-size: clamp(0.8em, 3.2vw, 0.95em);
+        margin-bottom: 0.4vh;
+    }
+
+    .score-display {
+        font-size: clamp(1.3em, 5.5vw, 1.8em);
+        margin: 0.8vh 0;
+    }
+
+    .points-earned {
+        font-size: clamp(0.75em, 3.2vw, 0.9em);
+        padding: 1.2vh 2vw;
+        margin-bottom: 0.8vh;
+    }
+
+    .btn-secondary {
+        padding: 1.5vh 4vw;
+        font-size: clamp(0.85em, 3.5vw, 1em);
     }
 
     .league-selection h2 {
