@@ -638,6 +638,9 @@ class FootballGuesser {
 
         this.pointsMessage.textContent = message;
         this.pointsMessage.parentElement.className = `points-earned ${className}`;
+
+        // Apply same color class to actual score display
+        this.actualScoreDisplay.className = `actual-score-inline ${className}`;
     }
 
     updateScore() {

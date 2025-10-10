@@ -28,7 +28,9 @@
         </header>
 
         <div id="loading-screen" class="loading-screen">
-            <div class="loader"></div>
+            <div class="crazy-score">
+                <span id="crazy-number">0</span>
+            </div>
             <p>Loading match data...</p>
         </div>
 
@@ -180,6 +182,97 @@
 
     <script src="game.js"></script>
     <script>
+        // Loading Screen Animation
+        const crazyNumberElement = document.getElementById('crazy-number');
+        const loadingTextElement = document.querySelector('.loading-screen p');
+        let crazyInterval;
+        let phraseInterval;
+        let letterInterval;
+        let loadingPhrases = [];
+        let currentPhraseIndex = 0;
+        let currentLetterIndex = 0;
+
+        // Fetch loading phrases
+        fetch('loading-phrases.json')
+            .then(response => response.json())
+            .then(data => {
+                loadingPhrases = data.phrases;
+                startPhraseAnimation();
+            })
+            .catch(error => {
+                console.error('Error loading phrases:', error);
+                loadingPhrases = ['Loading match data...'];
+                startPhraseAnimation();
+            });
+
+        function startCrazyScore() {
+            crazyInterval = setInterval(() => {
+                crazyNumberElement.textContent = Math.floor(Math.random() * 10);
+            }, 100); // Change every 100ms
+        }
+
+        function stopCrazyScore() {
+            if (crazyInterval) {
+                clearInterval(crazyInterval);
+            }
+            if (phraseInterval) {
+                clearInterval(phraseInterval);
+            }
+            if (letterInterval) {
+                clearInterval(letterInterval);
+            }
+        }
+
+        function typeLetterByLetter(phrase) {
+            currentLetterIndex = 0;
+            loadingTextElement.textContent = '';
+
+            if (letterInterval) {
+                clearInterval(letterInterval);
+            }
+
+            letterInterval = setInterval(() => {
+                if (currentLetterIndex < phrase.length) {
+                    loadingTextElement.textContent += phrase[currentLetterIndex];
+                    currentLetterIndex++;
+                } else {
+                    clearInterval(letterInterval);
+                }
+            }, 50); // 50ms per letter
+        }
+
+        function startPhraseAnimation() {
+            if (loadingPhrases.length === 0) return;
+
+            // Type first phrase immediately
+            typeLetterByLetter(loadingPhrases[0]);
+
+            // Change phrase every 3 seconds
+            phraseInterval = setInterval(() => {
+                currentPhraseIndex = (currentPhraseIndex + 1) % loadingPhrases.length;
+                typeLetterByLetter(loadingPhrases[currentPhraseIndex]);
+            }, 3000);
+        }
+
+        // Start animations when page loads
+        if (crazyNumberElement) {
+            startCrazyScore();
+        }
+
+        // Stop animations when loading screen is hidden
+        const loadingObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.target.classList.contains('hidden')) {
+                    stopCrazyScore();
+                }
+            });
+        });
+
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+            loadingObserver.observe(loadingScreen, { attributes: true, attributeFilter: ['class'] });
+        }
+
         // Debug Mode Toggle
         let debugMode = false;
         document.addEventListener('keydown', (e) => {

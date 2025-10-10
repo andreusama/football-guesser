@@ -277,9 +277,32 @@ header h1 {
 .score-display {
     font-size: 3em;
     font-weight: bold;
-    color: #1a3a2e;
     margin: 20px 0;
     font-family: 'Cursed Timer', monospace;
+}
+
+/* Score display color matches feedback */
+.actual-score-inline.excellent .score-display {
+    background: linear-gradient(135deg, #4dd21d, #2d5a3d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.actual-score-inline.very-good .score-display,
+.actual-score-inline.good .score-display,
+.actual-score-inline.okay .score-display {
+    background: linear-gradient(135deg, #ff9800, #ffd166);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.actual-score-inline.poor .score-display {
+    background: linear-gradient(135deg, #1a3a2e, #0d1f17);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .points-earned {
@@ -327,21 +350,18 @@ header h1 {
 .loading-screen {
     text-align: center;
     padding: 60px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
 }
 
-.loader {
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #4dd21d;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 20px;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.crazy-score {
+    font-family: 'Cursed Timer', monospace;
+    font-size: 6em;
+    font-weight: bold;
+    color: #1a3a2e;
 }
 
 .loading-screen p {

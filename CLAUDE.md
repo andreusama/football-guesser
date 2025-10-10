@@ -129,6 +129,7 @@ League emblems fetched separately:
 - **Proxied via:** `/api/football-data` (Vercel serverless function)
 
 **Competition Codes:**
+- Champions League: `CL` (6 API calls)
 - Premier League: `PL`
 - La Liga: `PD`
 - Serie A: `SA`
@@ -149,6 +150,7 @@ League emblems fetched separately:
 - Serie A: `4332`
 - Bundesliga: `4331`
 - Ligue 1: `4334`
+- Champions League: `4480` (⚠️ Uses local badge file instead: `UEFA_Champions_League.svg.png`)
 
 ### Why Not Use TheSportsDB for Everything?
 
@@ -171,19 +173,63 @@ Proxies TheSportsDB API requests:
 
 ## UI/UX Improvements (October 2025)
 
+### Design System
+**See STYLE.md for complete color palette documentation**
+
+**Football Pitch Theme:**
+- Dark pitch green background (`#1a3a2e`)
+- Grass texture on green buttons only (`grass.jpg`)
+- Gold gradient buttons for secondary actions
+- White cards with clean surfaces
+
+**Typography:**
+- **Cursed Timer font** (`CursedTimerUlil-Aznm.ttf`) applied ONLY to:
+  - Score input fields
+  - Actual score display
+- Rest of app uses Segoe UI
+
+### In-Place Result Transformation
+**Problem:** Separate result section caused layout shift and badge movement
+**Solution:** Transform guess panel in-place without layout changes
+
+**Implementation:**
+- Heading text changes: "Guess the final score:" → "Your guessing was:"
+- Inputs become read-only (grayed background)
+- Result elements use `visibility: hidden` (reserves space, no layout shift)
+- Button transforms: Green "Submit Guess" → Gold "Next Round"
+- Result elements positioned as siblings (not children) of guess section
+- Spacing reduced to 12px for tighter layout
+
+**Button Consistency:**
+- Both states: `width: 100%; max-width: 300px`
+- Green button: `border: 2px solid #4dd21d` with grass texture
+- Gold button: `border: 2px solid #ff9800` with solid gradient
+- Same padding, font-size, and background-size properties
+
 ### Feedback System
-Updated point feedback messages and colors for better clarity:
-- **10 points (Exact score)**: Green - "Perfect! Exact score! +10 pts"
-- **7 points (Goal difference)**: Blue - "Close! Goal difference correct +7 pts"
-- **5 points (Correct result)**: Cyan - "Good! Correct result +5 pts"
-- **3 points (One score)**: Yellow - "One score correct +3 pts"
-- **0 points**: Red - "Wrong +0 pts"
+Simplified to 3 visual states with palette-aligned gradients:
+- **10 points (Perfect)**: Green gradient - "Perfect! Exact score! +10 pts"
+- **7 points (Very Good)**: Gold gradient - "Close! Goal difference correct +7 pts"
+- **5 points (Good)**: Gold gradient - "Good! Correct winning side +5 pts"
+- **3 points (Okay)**: Gold gradient - "One score correct +3 pts"
+- **0 points (Wrong)**: Dark green gradient - "Wrong +0 pts"
 
 **Why the changes:**
-- Blue color for 7 points differentiates from perfect score (green)
-- Shortened messages ("pts" instead of "points") for mobile
-- Removed subjective judgments like "Great!" when answer wasn't correct
-- Better mobile responsiveness with smaller fonts and word wrapping
+- Unified middle-ground scores with gold (7/5/3 pts)
+- "Correct winning side" instead of "Correct result" (clearer)
+- Removed disruptive red - replaced with dark pitch green
+- All gradients flow darker → lighter consistently
+- Shortened "pts" for mobile responsiveness
+
+### Debug Mode
+Press `D` key to toggle debug panel:
+- **1**: League Selection screen
+- **2**: Team Selection screen
+- **3**: Game Screen (guess mode)
+- **4**: Result Screen (transformed state)
+- **5**: Game Over screen
+
+Quick visualization with placeholder data for testing layouts.
 
 ## Testing
 
@@ -192,10 +238,11 @@ Run locally with Vercel dev server:
 vercel dev
 ```
 
-Expected console output:
+Expected console output (6 leagues):
 ```
 Loading match data from Football-Data.org...
 Season: 2024-2025
+Champions League: 125+ matches loaded
 Premier League: 380 matches loaded
 La Liga: 380 matches loaded
 Serie A: 380 matches loaded
@@ -205,8 +252,8 @@ Ligue 1: 306 matches loaded
 ========================================
 MATCH LOADING SUMMARY
 ========================================
-Total matches processed: 1900
-Finished matches loaded: 1752
+Total matches processed: ~2000+
+Finished matches loaded: ~1900+
 Source: Football-Data.org
 ========================================
 
@@ -216,14 +263,18 @@ Loading league badges from TheSportsDB...
 ✓ Serie A badge loaded from TheSportsDB
 ✓ Bundesliga badge loaded from TheSportsDB
 ✓ Ligue 1 badge loaded from TheSportsDB
+ℹ Champions League using local badge file
 ```
 
 ## Files
 
 ### Main Application
 - ✅ `public/game.js` - Hybrid system using Football-Data.org + TheSportsDB
-- ✅ `public/index.html` - Main game interface
-- ✅ `public/style.css` - Responsive styling with mobile support
+- ✅ `public/index.html` - Main game interface with debug mode
+- ✅ `public/style.css` - Football pitch theme with responsive mobile support
+- ✅ `public/grass.jpg` - Background texture for green buttons
+- ✅ `public/UEFA_Champions_League.svg.png` - Local Champions League badge
+- ✅ `public/fonts/CursedTimerUlil-Aznm.ttf` - Score display font
 
 ### Vercel Serverless Functions
 - ✅ `api/football-data.js` - Proxy for Football-Data.org API
@@ -233,7 +284,8 @@ Loading league badges from TheSportsDB...
 ### Testing & Documentation
 - ✅ `test-football-data-api.html` - Test Football-Data.org integration
 - ✅ `test-thesportsdb-only.html` - Test TheSportsDB integration
-- ✅ `CLAUDE.md` - This documentation file
+- ✅ `CLAUDE.md` - This technical documentation file
+- ✅ `STYLE.md` - Color palette documentation (isolated from logic)
 - ✅ `README.md` - Project overview
 - ⚠️ `token.txt` - Football-Data.org API token (DO NOT COMMIT)
 
