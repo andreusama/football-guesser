@@ -132,8 +132,17 @@
                 </div>
             </div>
 
-            <div class="guess-section">
-                <h3>Guess the final score:</h3>
+            <div class="guess-section" id="guess-section">
+                <h3 id="guess-heading">Guess the final score:</h3>
+                <div id="result-message" class="points-earned hidden" style="margin-bottom: 20px;">
+                    <span id="points-message"></span>
+                </div>
+                <div id="actual-score-display" class="actual-score-inline hidden">
+                    <h3>Actual Score:</h3>
+                    <div class="score-display">
+                        <span id="actual-home">-</span> - <span id="actual-away">-</span>
+                    </div>
+                </div>
                 <div class="score-inputs">
                     <div class="input-group">
                         <label for="home-score">Home</label>
@@ -146,19 +155,6 @@
                     </div>
                 </div>
                 <button id="submit-guess" class="btn-primary">Submit Guess</button>
-            </div>
-
-            <div id="result-section" class="result-section hidden">
-                <div class="actual-score">
-                    <h3>Actual Score:</h3>
-                    <div class="score-display">
-                        <span id="actual-home">-</span> - <span id="actual-away">-</span>
-                    </div>
-                </div>
-                <div class="points-earned">
-                    <span id="points-message"></span>
-                </div>
-                <button id="next-round" class="btn-secondary">Next Round</button>
             </div>
         </main>
 
@@ -194,7 +190,6 @@
                 document.getElementById('league-selection').classList.add('hidden');
                 document.getElementById('team-selection').classList.add('hidden');
                 document.getElementById('game-container').classList.add('hidden');
-                document.getElementById('result-section').classList.add('hidden');
                 document.getElementById('game-over').classList.add('hidden');
             };
 
@@ -253,15 +248,24 @@
                 case '4': // Result Screen
                     hideAll();
                     document.getElementById('game-container').classList.remove('hidden');
-                    document.getElementById('result-section').classList.remove('hidden');
                     document.getElementById('league-name').textContent = 'Premier League';
                     document.getElementById('match-date').textContent = 'May 10, 2025';
                     document.getElementById('home-team').textContent = 'Bournemouth';
                     document.getElementById('away-team').textContent = 'Aston Villa';
+                    // Show result state
+                    document.getElementById('guess-heading').classList.add('hidden');
+                    document.getElementById('result-message').classList.remove('hidden');
+                    document.getElementById('actual-score-display').classList.remove('hidden');
                     document.getElementById('actual-home').textContent = '2';
                     document.getElementById('actual-away').textContent = '1';
                     document.getElementById('points-message').textContent = 'Perfect! Exact score! +10 pts';
-                    document.querySelector('#result-section .points-earned').className = 'points-earned excellent';
+                    document.getElementById('result-message').className = 'points-earned excellent';
+                    document.getElementById('home-score').value = '2';
+                    document.getElementById('away-score').value = '1';
+                    document.getElementById('home-score').readOnly = true;
+                    document.getElementById('away-score').readOnly = true;
+                    document.getElementById('submit-guess').textContent = 'Next Round';
+                    document.getElementById('submit-guess').className = 'btn-secondary';
                     document.getElementById('score').textContent = '10';
                     // Add placeholder badges
                     document.querySelector('.home-team .team-logo').innerHTML = '<div style="width: 100px; height: 100px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3em;">⚽</div>';

@@ -138,6 +138,23 @@ header h1 {
     padding: 30px;
     border-radius: 15px;
     text-align: center;
+    transition: all 0.3s ease;
+}
+
+.actual-score-inline {
+    margin-bottom: 20px;
+}
+
+.actual-score-inline h3 {
+    color: #1a3a2e;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.input-group input:read-only {
+    background: #e9ecef;
+    cursor: not-allowed;
+    border-color: #1a3a2e;
 }
 
 .guess-section h3 {
@@ -272,22 +289,22 @@ header h1 {
 }
 
 .points-earned.very-good {
-    background: linear-gradient(135deg, #4dd21d, #00bcd4);
+    background: linear-gradient(135deg, #ff9800, #ffd166);
     color: white;
 }
 
 .points-earned.good {
-    background: linear-gradient(135deg, #ffd166, #ff9800);
+    background: linear-gradient(135deg, #ff9800, #ffd166);
     color: white;
 }
 
 .points-earned.okay {
-    background: linear-gradient(135deg, #ff9800, #ff5722);
+    background: linear-gradient(135deg, #ff9800, #ffd166);
     color: white;
 }
 
 .points-earned.poor {
-    background: linear-gradient(135deg, #ff5722, #d32f2f);
+    background: linear-gradient(135deg, #1a3a2e, #0d1f17);
     color: white;
 }
 

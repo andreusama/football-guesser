@@ -177,8 +177,6 @@ class FootballGuesser {
         this.homeScoreInput = document.getElementById('home-score');
         this.awayScoreInput = document.getElementById('away-score');
         this.submitBtn = document.getElementById('submit-guess');
-        this.nextBtn = document.getElementById('next-round');
-        this.resultSection = document.getElementById('result-section');
         this.actualHome = document.getElementById('actual-home');
         this.actualAway = document.getElementById('actual-away');
         this.pointsMessage = document.getElementById('points-message');
@@ -197,11 +195,20 @@ class FootballGuesser {
         this.playAllTeamsBtn = document.getElementById('play-all-teams');
         this.backToLeaguesBtn = document.getElementById('back-to-leagues');
         this.selectedLeagueNameSpan = document.getElementById('selected-league-name');
+        // New elements for transformation
+        this.guessHeading = document.getElementById('guess-heading');
+        this.resultMessage = document.getElementById('result-message');
+        this.actualScoreDisplay = document.getElementById('actual-score-display');
     }
 
     attachEventListeners() {
-        this.submitBtn.addEventListener('click', () => this.submitGuess());
-        this.nextBtn.addEventListener('click', () => this.nextRound());
+        this.submitBtn.addEventListener('click', () => {
+            if (this.submitBtn.textContent === 'Submit Guess') {
+                this.submitGuess();
+            } else {
+                this.nextRound();
+            }
+        });
         this.playAgainBtn.addEventListener('click', () => this.startNewGame());
         this.changeLeagueBtn.addEventListener('click', () => this.showLeagueSelection());
         this.playAllTeamsBtn.addEventListener('click', () => this.selectTeam(null));
@@ -215,12 +222,12 @@ class FootballGuesser {
             });
         });
 
-        // Allow Enter key to submit
+        // Allow Enter key to submit/next
         this.homeScoreInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.submitGuess();
+            if (e.key === 'Enter' && this.submitBtn.textContent === 'Submit Guess') this.submitGuess();
         });
         this.awayScoreInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.submitGuess();
+            if (e.key === 'Enter' && this.submitBtn.textContent === 'Submit Guess') this.submitGuess();
         });
     }
 
@@ -427,13 +434,27 @@ class FootballGuesser {
         // Fetch and display league logo
         this.loadLeagueLogo();
 
+        // Reset panel to guess state
+        this.resetGuessPanel();
+    }
+
+    resetGuessPanel() {
         // Reset inputs - clear values so placeholder shows
         this.homeScoreInput.value = '';
         this.awayScoreInput.value = '';
+        this.homeScoreInput.readOnly = false;
+        this.awayScoreInput.readOnly = false;
 
-        // Show guess section, hide result
-        this.resultSection.classList.add('hidden');
+        // Reset heading and button
+        this.guessHeading.textContent = 'Guess the final score:';
+        this.guessHeading.classList.remove('hidden');
+        this.submitBtn.textContent = 'Submit Guess';
+        this.submitBtn.className = 'btn-primary';
         this.submitBtn.disabled = false;
+
+        // Hide result elements
+        this.resultMessage.classList.add('hidden');
+        this.actualScoreDisplay.classList.add('hidden');
     }
 
     loadTeamBadges() {
@@ -483,6 +504,10 @@ class FootballGuesser {
         const guessedHome = this.homeScoreInput.value === '' ? 0 : parseInt(this.homeScoreInput.value);
         const guessedAway = this.awayScoreInput.value === '' ? 0 : parseInt(this.awayScoreInput.value);
 
+        // If inputs were empty, show 0
+        if (this.homeScoreInput.value === '') this.homeScoreInput.value = '0';
+        if (this.awayScoreInput.value === '') this.awayScoreInput.value = '0';
+
         const actualHome = this.currentMatch.homeScore;
         const actualAway = this.currentMatch.awayScore;
 
@@ -490,17 +515,33 @@ class FootballGuesser {
         const points = this.calculatePoints(guessedHome, guessedAway, actualHome, actualAway);
         this.score += points;
 
-        // Show results
-        this.actualHome.textContent = actualHome;
-        this.actualAway.textContent = actualAway;
-        this.displayResult(points, guessedHome, guessedAway, actualHome, actualAway);
+        // Transform panel to result state
+        this.transformToResultPanel(points, actualHome, actualAway);
 
         // Update score display
         this.updateScore();
+    }
 
-        // Show result section
-        this.resultSection.classList.remove('hidden');
-        this.submitBtn.disabled = true;
+    transformToResultPanel(points, actualHome, actualAway) {
+        // Make inputs read-only
+        this.homeScoreInput.readOnly = true;
+        this.awayScoreInput.readOnly = true;
+
+        // Hide the heading
+        this.guessHeading.classList.add('hidden');
+
+        // Show result message
+        this.displayResult(points);
+        this.resultMessage.classList.remove('hidden');
+
+        // Show actual score
+        this.actualHome.textContent = actualHome;
+        this.actualAway.textContent = actualAway;
+        this.actualScoreDisplay.classList.remove('hidden');
+
+        // Transform button to gold "Next Round"
+        this.submitBtn.textContent = 'Next Round';
+        this.submitBtn.className = 'btn-secondary';
     }
 
     calculatePoints(guessedHome, guessedAway, actualHome, actualAway) {
@@ -533,7 +574,7 @@ class FootballGuesser {
         return 0;
     }
 
-    displayResult(points, guessedHome, guessedAway, actualHome, actualAway) {
+    displayResult(points) {
         let message = '';
         let className = '';
 
@@ -544,7 +585,7 @@ class FootballGuesser {
             message = `Close! Goal difference correct +${points} pts`;
             className = 'very-good';
         } else if (points === 5) {
-            message = `Good! Correct result +${points} pts`;
+            message = `Good! Correct winning side +${points} pts`;
             className = 'good';
         } else if (points === 3) {
             message = `One score correct +${points} pts`;
@@ -555,7 +596,7 @@ class FootballGuesser {
         }
 
         this.pointsMessage.textContent = message;
-        this.pointsMessage.className = `points-earned ${className}`;
+        this.pointsMessage.parentElement.className = `points-earned ${className}`;
     }
 
     updateScore() {
