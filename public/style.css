@@ -249,7 +249,7 @@ header h1 {
     background-size: cover;
     background-position: center;
     color: #1a3a2e;
-    border: 2px solid transparent;
+    border: 2px solid #ff9800;
 }
 
 .btn-secondary:hover {

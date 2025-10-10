@@ -4,7 +4,8 @@ const LEAGUE_FLAGS = {
     'La Liga': '🇪🇸',
     'Serie A': '🇮🇹',
     'Bundesliga': '🇩🇪',
-    'Ligue 1': '🇫🇷'
+    'Ligue 1': '🇫🇷',
+    'Champions League': '🏆'
 };
 
 // Football-Data.org API configuration - using Vercel serverless function to avoid CORS
@@ -16,7 +17,8 @@ const COMPETITION_CODES = {
     'La Liga': 'PD',
     'Serie A': 'SA',
     'Bundesliga': 'BL1',
-    'Ligue 1': 'FL1'
+    'Ligue 1': 'FL1',
+    'Champions League': 'CL'
 };
 
 // TheSportsDB API for league badges - using Vercel serverless function
@@ -28,7 +30,8 @@ const LEAGUE_IDS = {
     'La Liga': '4335',
     'Serie A': '4332',
     'Bundesliga': '4331',
-    'Ligue 1': '4334'
+    'Ligue 1': '4334',
+    'Champions League': '4480'
 };
 
 // Will hold all loaded matches from Football-Data.org
@@ -162,6 +165,10 @@ class FootballGuesser {
     }
 
     getLeagueEmblem(leagueName) {
+        // Use local file for Champions League badge
+        if (leagueName === 'Champions League') {
+            return 'UEFA_Champions_League.svg.png';
+        }
         // League emblems are cached from TheSportsDB
         return leagueEmblemCache[leagueName] || null;
     }
@@ -243,6 +250,7 @@ class FootballGuesser {
         document.getElementById('count-seriea').textContent = `${leagueCounts['Serie A'] || 0} matches`;
         document.getElementById('count-bundesliga').textContent = `${leagueCounts['Bundesliga'] || 0} matches`;
         document.getElementById('count-ligue1').textContent = `${leagueCounts['Ligue 1'] || 0} matches`;
+        document.getElementById('count-ucl').textContent = `${leagueCounts['Champions League'] || 0} matches`;
         document.getElementById('count-all').textContent = `${matchDatabase.length} matches`;
 
         // Load league badges for selection screen
@@ -265,7 +273,8 @@ class FootballGuesser {
             'La Liga': 'badge-laliga',
             'Serie A': 'badge-seriea',
             'Bundesliga': 'badge-bundesliga',
-            'Ligue 1': 'badge-ligue1'
+            'Ligue 1': 'badge-ligue1',
+            'Champions League': 'badge-ucl'
         };
 
         for (const [leagueName, badgeId] of Object.entries(leagueBadgeMap)) {
