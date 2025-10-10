@@ -169,6 +169,12 @@ header h1 {
     color: #333;
 }
 
+.input-group input::placeholder {
+    color: #333;
+    opacity: 1;
+    font-weight: bold;
+}
+
 .input-group input:focus {
     outline: none;
     border-color: #667eea;

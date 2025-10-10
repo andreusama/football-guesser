@@ -427,9 +427,9 @@ class FootballGuesser {
         // Fetch and display league logo
         this.loadLeagueLogo();
 
-        // Reset inputs
-        this.homeScoreInput.value = 0;
-        this.awayScoreInput.value = 0;
+        // Reset inputs - clear values so placeholder shows
+        this.homeScoreInput.value = '';
+        this.awayScoreInput.value = '';
 
         // Show guess section, hide result
         this.resultSection.classList.add('hidden');
@@ -479,8 +479,9 @@ class FootballGuesser {
     }
 
     submitGuess() {
-        const guessedHome = parseInt(this.homeScoreInput.value);
-        const guessedAway = parseInt(this.awayScoreInput.value);
+        // Treat empty inputs as 0
+        const guessedHome = this.homeScoreInput.value === '' ? 0 : parseInt(this.homeScoreInput.value);
+        const guessedAway = this.awayScoreInput.value === '' ? 0 : parseInt(this.awayScoreInput.value);
 
         const actualHome = this.currentMatch.homeScore;
         const actualAway = this.currentMatch.awayScore;
